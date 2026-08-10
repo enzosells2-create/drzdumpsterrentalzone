@@ -1,4 +1,4 @@
-import { CheckCircle2, MapPin, Phone } from "lucide-react";
+import { MapPin, Phone } from "lucide-react";
 import { BookingData } from "@/lib/types";
 import { COMPANY } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
@@ -8,6 +8,14 @@ type Props = {
   confirmationNumber: string;
   onReset: () => void;
 };
+
+const NEXT_STEPS = [
+  "📧 Confirmation email sent to your email address",
+  "📞 We'll call to confirm delivery time (usually within 24 hours)",
+  "🚚 Dumpster delivered at scheduled time",
+  "📍 Placed at the location you pinpointed on the map",
+  "🔄 Automatic pickup at end of rental period",
+];
 
 export default function StepConfirmation({ data, confirmationNumber, onReset }: Props) {
   const deliveryDateLabel = data.deliveryDate
@@ -20,30 +28,26 @@ export default function StepConfirmation({ data, confirmationNumber, onReset }: 
     : "—";
 
   return (
-    <div className="mx-auto max-w-2xl text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red/10">
-        <CheckCircle2 className="h-9 w-9 text-red" />
-      </div>
-      <h2 className="mt-4 font-heading text-3xl font-extrabold text-navy">Booking Confirmed!</h2>
-      <p className="mt-2 text-gray-600">
-        Thanks, {data.fullName.split(" ")[0] || "there"}. Your dumpster is scheduled. We&apos;ll see
-        you on delivery day.
-      </p>
+    <div className="mx-auto max-w-2xl rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
+      <div className="text-6xl">✅</div>
+      <h2 className="mt-4 font-heading text-3xl font-extrabold text-green-600">
+        Booking Confirmed!
+      </h2>
+      <p className="mt-2 text-gray-600">Your dumpster rental has been successfully scheduled</p>
 
-      <div className="mt-6 inline-block rounded-xl bg-navy px-6 py-3">
-        <p className="text-xs uppercase tracking-wide text-white/60">Confirmation Number</p>
-        <p className="font-heading text-2xl font-extrabold text-white">{confirmationNumber}</p>
-      </div>
-
-      <div className="mt-8 space-y-3 rounded-xl bg-white p-6 text-left shadow-sm ring-1 ring-gray-100">
-        <SummaryRow label="Dumpster Size" value={data.size?.label ?? "—"} />
-        <SummaryRow label="Price" value={data.price !== null ? formatCurrency(data.price) : "—"} />
-        <SummaryRow label="Delivery Date" value={deliveryDateLabel} />
-        <SummaryRow label="Rental Duration" value={data.rentalDays ? `${data.rentalDays} days` : "—"} />
+      <div className="mt-8 space-y-3 rounded-lg border-2 border-navy bg-blue-50/60 p-6 text-left">
+        <h3 className="font-heading text-base font-bold text-navy">Confirmation Details</h3>
+        <SummaryRow label="Confirmation #" value={confirmationNumber} strong />
+        <SummaryRow
+          label={data.size?.label ?? "Dumpster"}
+          value={data.price !== null ? formatCurrency(data.price) : "—"}
+        />
         <SummaryRow
           label="Delivery Address"
           value={`${data.street}, ${data.city}, ${data.state} ${data.zip}`}
         />
+        <SummaryRow label="Delivery Date" value={deliveryDateLabel} />
+        <SummaryRow label="Rental Duration" value={data.rentalDays ? `${data.rentalDays} days` : "—"} />
         <SummaryRow
           label="Pinned Location"
           value={
@@ -53,17 +57,38 @@ export default function StepConfirmation({ data, confirmationNumber, onReset }: 
           }
           icon={<MapPin className="h-4 w-4 text-red" />}
         />
-        <SummaryRow label="Card on File" value={data.cardLast4 ? `${data.cardBrand} •••• ${data.cardLast4}` : "—"} />
+        <SummaryRow
+          label="Total Paid"
+          value={data.cardLast4 ? `${data.cardBrand} •••• ${data.cardLast4}` : "—"}
+          last
+        />
       </div>
 
-      <div className="mt-6 flex flex-col items-center gap-3 rounded-xl bg-gray-50 p-5 ring-1 ring-gray-100">
-        <p className="text-sm text-gray-600">Questions about your order?</p>
+      <div className="mt-6 rounded-lg bg-blue-50/60 p-5 text-left">
+        <h3 className="mb-3 font-heading text-base font-bold text-navy">What Happens Next?</h3>
+        <ul className="space-y-2 text-sm text-gray-600">
+          {NEXT_STEPS.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-6 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-4 text-left">
+        <p className="text-sm font-semibold text-amber-800">📋 Save Your Confirmation Number</p>
+        <p className="mt-1 text-xs text-amber-700">
+          You can use this to track your rental or modify your booking.
+        </p>
+      </div>
+
+      <div className="mt-8 border-t border-gray-200 pt-6">
+        <p className="text-sm text-gray-600">Need help? Contact us anytime:</p>
         <a
           href={COMPANY.phoneHref}
-          className="flex items-center gap-2 rounded-full bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light"
+          className="mt-2 flex items-center justify-center gap-2 text-xl font-bold text-red hover:text-red-dark"
         >
-          <Phone className="h-4 w-4" /> {COMPANY.phone}
+          <Phone className="h-5 w-5" /> {COMPANY.phone}
         </a>
+        <p className="mt-1 text-xs text-gray-400">Available 24/7 for support</p>
       </div>
 
       <button
@@ -80,15 +105,27 @@ function SummaryRow({
   label,
   value,
   icon,
+  strong = false,
+  last = false,
 }: {
   label: string;
   value: string;
   icon?: React.ReactNode;
+  strong?: boolean;
+  last?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="flex items-center gap-1.5 text-sm font-semibold text-navy">
+    <div
+      className={`flex items-center justify-between text-sm ${
+        last ? "border-t border-gray-200 pt-3 font-bold text-red" : "border-b border-gray-200 pb-2"
+      }`}
+    >
+      <span className={last ? "" : "text-gray-500"}>{label}</span>
+      <span
+        className={`flex items-center gap-1.5 ${
+          strong ? "font-bold text-red" : last ? "" : "font-semibold text-navy"
+        }`}
+      >
         {icon}
         {value}
       </span>

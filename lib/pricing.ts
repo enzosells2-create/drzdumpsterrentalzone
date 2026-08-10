@@ -8,17 +8,14 @@ import { DumpsterSizeOption } from "./types";
  */
 export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
-    id: "5-yard",
-    label: "5 Yard",
+    id: "2.5-yard",
+    label: "2.5 Yard",
     priceMin: 149,
     priceMax: 200,
-    dimensions: "12' L x 8' W x 3.5' H",
-    perfectFor: [
-      "Small cleanouts",
-      "Bathroom remodels",
-      "Yard debris",
-      "Garage cleanup",
-    ],
+    dimensions: "8' L x 4' W x 3' H",
+    imageUrl: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=500&h=300&fit=crop",
+    perfectFor: ["Small cleanups", "Remodeling", "Junk removal"],
+    includes: ["2 ton capacity", "3-7 day rental", "Fast delivery"],
   },
   {
     id: "10-yard",
@@ -26,12 +23,9 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
     priceMin: 275,
     priceMax: 325,
     dimensions: "14' L x 8' W x 4' H",
-    perfectFor: [
-      "Kitchen remodels",
-      "Basement cleanouts",
-      "Small roofing jobs",
-      "Moving cleanouts",
-    ],
+    imageUrl: "https://images.unsplash.com/photo-1581092160562-40fed08d4e00?w=500&h=300&fit=crop",
+    perfectFor: ["Medium jobs", "Garage cleanout", "Construction debris"],
+    includes: ["2 ton capacity", "3-7 day rental", "Reliable service"],
   },
   {
     id: "15-yard",
@@ -39,12 +33,9 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
     priceMin: 350,
     priceMax: 400,
     dimensions: "16' L x 8' W x 4.5' H",
-    perfectFor: [
-      "Whole-home cleanouts",
-      "Large renovations",
-      "Deck removal",
-      "Multi-room projects",
-    ],
+    imageUrl: "https://images.unsplash.com/photo-1578654377249-e339c74d1dca?w=500&h=300&fit=crop",
+    perfectFor: ["Large projects", "Home renovations", "Basement cleanup"],
+    includes: ["2 ton capacity", "3-7 day rental", "Professional service"],
   },
   {
     id: "20-yard",
@@ -52,12 +43,9 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
     priceMin: 400,
     priceMax: 450,
     dimensions: "18' L x 8' W x 5' H",
-    perfectFor: [
-      "New construction",
-      "Major renovations",
-      "Commercial cleanouts",
-      "Large roofing jobs",
-    ],
+    imageUrl: "https://images.unsplash.com/photo-1581092335391-113b2089fad9?w=500&h=300&fit=crop",
+    perfectFor: ["Major renovations", "Commercial jobs", "Large cleanouts"],
+    includes: ["2 ton capacity", "3-7 day rental", "Premium service"],
   },
 ];
 
@@ -81,6 +69,7 @@ export const PROHIBITED_ITEMS = [
   "Hazardous materials",
   "Paint & liquids",
   "Batteries",
+  "Asbestos materials",
 ];
 
 export const COMPANY = {

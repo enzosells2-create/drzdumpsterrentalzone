@@ -47,7 +47,7 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
       </div>
 
       <div className="mt-6 space-y-5 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-        <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
+        <div className="flex items-center gap-2 border-b-2 border-red pb-4">
           <FileText className="h-5 w-5 text-red" />
           <p className="text-sm text-gray-500">
             Agreement between {COMPANY.name} and{" "}
@@ -58,7 +58,7 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
         </div>
 
         <Section title="What's Included">
-          <ul className="list-inside list-disc space-y-1 text-sm text-gray-600">
+          <ul className="list-inside list-disc space-y-1">
             <li>2 tons (4,000 lbs) of weight included in the base price</li>
             <li>Delivery to and pickup from the address provided</li>
             <li>{data.rentalDays ?? "—"}-day rental period starting on the delivery date</li>
@@ -66,11 +66,11 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
         </Section>
 
         <Section title="Prohibited Items">
-          <p className="mb-2 text-sm text-gray-600">
+          <p className="mb-2">
             The following items may <strong>not</strong> be placed in the dumpster under any
             circumstances:
           </p>
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-1">
             {PROHIBITED_ITEMS.map((item) => (
               <li key={item} className="flex items-center gap-1.5">
                 <span className="text-red">✕</span> {item}
@@ -80,7 +80,7 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
         </Section>
 
         <Section title="Weight & Overage Fees">
-          <ul className="space-y-1 text-sm text-gray-600">
+          <ul className="space-y-1">
             <li>Additional ton over the included 2 tons: <strong className="text-navy">{formatCurrency(OVERAGE_FEES.extraTon)}</strong> per ton</li>
             <li>Overloaded dumpster (above fill line): <strong className="text-navy">{formatCurrency(OVERAGE_FEES.overloaded)}</strong></li>
             <li>Each additional day beyond the rental period: <strong className="text-navy">{formatCurrency(OVERAGE_FEES.extraDay)}</strong> per day</li>
@@ -90,7 +90,7 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
         </Section>
 
         <Section title="Liability & Care of the Dumpster">
-          <p className="text-sm text-gray-600">
+          <p>
             The customer is responsible for the dumpster while it is on their property, including
             protecting it from damage, vandalism, or unauthorized use by third parties. The
             customer agrees to place the dumpster only in the location marked in the next step and
@@ -99,11 +99,12 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
           </p>
         </Section>
 
-        <Section title="Cancellation Policy">
-          <p className="text-sm text-gray-600">
-            Cancellations made more than 24 hours before the scheduled delivery date receive a
-            full refund. Cancellations made within 24 hours of delivery, or after the dumpster has
-            been delivered, are non-refundable.
+        <Section title="Cancellation & Extensions">
+          <p>
+            Cancellations must be made at least 48 hours before the scheduled delivery date to
+            receive a full refund. Extensions beyond the rental period are available at{" "}
+            <strong className="text-navy">{formatCurrency(OVERAGE_FEES.extraDay)} per day</strong>{" "}
+            and must be approved by {COMPANY.name}.
           </p>
         </Section>
       </div>
@@ -172,11 +173,13 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h3 className="mb-1.5 font-heading text-sm font-bold uppercase tracking-wide text-navy">
+    <div className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+      <h3 className="mb-2 font-heading text-sm font-bold uppercase tracking-wide text-navy">
         {title}
       </h3>
-      {children}
+      <div className="rounded-md bg-gray-50 p-3.5 text-sm leading-relaxed text-gray-600">
+        {children}
+      </div>
     </div>
   );
 }

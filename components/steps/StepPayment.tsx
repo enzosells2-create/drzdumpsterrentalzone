@@ -48,6 +48,10 @@ export default function StepPayment({ data, onBack, onContinue }: Props) {
 
   const digits = cardNumber.replace(/\D/g, "");
   const brand = detectCardBrand(cardNumber);
+  const maskedCardDisplay =
+    digits.length > 0
+      ? ("•".repeat(Math.max(digits.length - 4, 0)) + digits.slice(-4)).replace(/(.{4})/g, "$1 ").trim()
+      : "•••• •••• •••• ••••";
 
   function validate(): FieldErrors {
     const next: FieldErrors = {};
@@ -102,26 +106,27 @@ export default function StepPayment({ data, onBack, onContinue }: Props) {
           </div>
 
           {/* Live card preview */}
-          <div className="relative h-52 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-navy to-navy-light p-6 text-white shadow-lg">
+          <div className="relative h-52 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-navy to-navy-light p-6 font-mono text-white shadow-lg">
+            <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-white/5" />
             <div className="flex items-center justify-between">
-              <div className="h-8 w-11 rounded bg-white/20" />
+              <div className="h-9 w-12 rounded bg-gradient-to-br from-yellow-300 to-yellow-500" />
               <span className="font-heading text-sm font-bold uppercase tracking-widest text-white/80">
                 {brand}
               </span>
             </div>
-            <p className="mt-8 font-mono text-xl tracking-widest sm:text-2xl">
-              {(cardNumber || "•••• •••• •••• ••••")
-                .padEnd(19, "•")
-                .slice(0, 19)}
-            </p>
+            <p className="mt-8 text-xl tracking-widest sm:text-2xl">{maskedCardDisplay}</p>
             <div className="mt-6 flex items-end justify-between text-sm">
               <div>
-                <p className="text-[10px] uppercase text-white/60">Cardholder</p>
-                <p className="font-medium uppercase tracking-wide">{cardName || "Your Name"}</p>
+                <p className="text-[10px] uppercase text-white/60">Card Holder</p>
+                <p className="font-medium uppercase tracking-wide">{cardName || "YOUR NAME"}</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase text-white/60">Expires</p>
                 <p className="font-medium">{cardExpiry || "MM/YY"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase text-white/60">CVC</p>
+                <p className="font-medium">{cardCvc ? "•".repeat(cardCvc.length) : "•••"}</p>
               </div>
             </div>
           </div>

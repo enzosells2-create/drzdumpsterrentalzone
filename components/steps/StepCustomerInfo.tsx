@@ -76,11 +76,10 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
       <h2 className="font-heading text-2xl font-bold text-navy sm:text-3xl">Your Information</h2>
 
       {data.size && (
-        <div className="mt-4 flex items-center justify-between rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
-          <div>
-            <p className="text-sm text-gray-500">Selected size</p>
-            <p className="font-heading text-lg font-bold text-navy">{data.size.label} Dumpster</p>
-          </div>
+        <div className="mt-4 flex items-center justify-between rounded-lg border-l-4 border-red bg-blue-50/60 p-4">
+          <p className="font-semibold text-navy">
+            Selected: {data.size.label} Dumpster
+          </p>
           <p className="font-heading text-xl font-extrabold text-red">
             {data.price !== null ? formatCurrency(data.price) : `$${data.size.priceMin}–$${data.size.priceMax}`}
           </p>
@@ -136,12 +135,19 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="State" error={errors.state}>
-            <input
+            <select
               className={inputClass("state")}
               value={form.state}
               onChange={(e) => set("state", e.target.value)}
-              placeholder="MI"
-            />
+            >
+              <option value="" disabled>
+                Select State
+              </option>
+              <option value="MI">Michigan</option>
+              <option value="OH">Ohio</option>
+              <option value="IN">Indiana</option>
+              <option value="IL">Illinois</option>
+            </select>
           </Field>
           <Field label="ZIP" error={errors.zip}>
             <input

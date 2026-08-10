@@ -26,8 +26,7 @@ export type SavedBooking = {
 };
 
 export function generateConfirmationNumber(): string {
-  const rand = Math.floor(100000 + Math.random() * 900000);
-  return `DRZ-${rand}`;
+  return `DRZ${Date.now().toString().slice(-8)}`;
 }
 
 export function saveBooking(booking: SavedBooking): void {

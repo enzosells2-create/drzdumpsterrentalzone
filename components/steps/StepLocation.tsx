@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Loader2, MapPin } from "lucide-react";
 import { BookingData } from "@/lib/types";
+import { formatCurrency } from "@/lib/format";
 
 // ────────────────────────────────────────────────────────────────────
 // GOOGLE MAPS API KEY SPOT
@@ -129,60 +130,96 @@ export default function StepLocation({ data, onBack, onContinue }: Props) {
   }, []);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <h2 className="font-heading text-2xl font-bold text-navy sm:text-3xl">
-        Mark the Drop Location
-      </h2>
-      <p className="mt-2 text-sm text-gray-600">
-        Drag the red pin, or click anywhere on the map, to mark exactly where on the driveway
-        you&apos;d like the dumpster placed at <strong className="text-navy">{fullAddress}</strong>.
-      </p>
+    <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+      <div className="bg-gradient-to-br from-navy to-navy-light px-6 py-8 text-center text-white">
+        <h2 className="font-heading text-2xl font-bold sm:text-3xl">Pinpoint Dumpster Location</h2>
+        <p className="mt-1 text-sm text-white/80">
+          Click on the map to mark exactly where you want the dumpster placed
+        </p>
+      </div>
 
-      {status === "loading" && (
-        <div className="mt-6 flex h-[420px] w-full items-center justify-center rounded-2xl bg-white ring-1 ring-gray-100">
-          <div className="flex flex-col items-center gap-2 text-gray-400">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-sm">Loading satellite map…</p>
+      <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
+        <div>
+          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3.5 text-sm text-amber-800">
+            📍 <strong>Click anywhere on the satellite map</strong> to place a red marker showing
+            exactly where you want the dumpster dropped on your driveway. You can drag the marker
+            to adjust its position.
+          </div>
+
+          {status === "loading" && (
+            <div className="flex h-[420px] w-full items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+              <div className="flex flex-col items-center gap-2 text-gray-400">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <p className="text-sm">Loading satellite map…</p>
+              </div>
+            </div>
+          )}
+
+          {(status === "no-key" || status === "geocode-error" || status === "script-error") && (
+            <ManualPinFallback status={status} pin={pin} onSetPin={setPin} />
+          )}
+
+          <div
+            ref={mapRef}
+            className={`h-[420px] w-full rounded-lg border border-gray-200 ${
+              status === "ready" ? "block" : "hidden"
+            }`}
+          />
+        </div>
+
+        <div className="flex flex-col justify-between">
+          <div className="space-y-3">
+            <InfoBox title="Delivery Address" value={fullAddress} />
+            <InfoBox title="Selected Dumpster" value={data.size?.label ?? "—"} />
+            <InfoBox
+              title="Pinned Location"
+              value={
+                pin ? (
+                  <span className="flex items-center gap-1.5 font-mono">
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-red" />
+                    {pin.lat.toFixed(6)}, {pin.lng.toFixed(6)}
+                  </span>
+                ) : (
+                  "Click on map to set location"
+                )
+              }
+            />
+            <InfoBox
+              title="Rental Details"
+              value={`${data.rentalDays ?? "—"} days • ${
+                data.price !== null ? formatCurrency(data.price) : "—"
+              } • Contact: ${data.phone || "—"}`}
+            />
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              onClick={() => pin && onContinue(pin)}
+              disabled={!pin}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-red py-3 text-sm font-semibold text-white transition hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Complete Your Booking <ArrowRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onBack}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-navy transition hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </button>
           </div>
         </div>
-      )}
-
-      {(status === "no-key" || status === "geocode-error" || status === "script-error") && (
-        <ManualPinFallback status={status} pin={pin} onSetPin={setPin} />
-      )}
-
-      <div
-        ref={mapRef}
-        className={`mt-6 h-[420px] w-full rounded-2xl ring-1 ring-gray-100 ${
-          status === "ready" ? "block" : "hidden"
-        }`}
-      />
-
-      {pin && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl bg-white p-4 text-sm shadow-sm ring-1 ring-gray-100">
-          <MapPin className="h-4 w-4 text-red" />
-          <span className="text-gray-600">Pinned location:</span>
-          <span className="font-mono font-semibold text-navy">
-            {pin.lat.toFixed(6)}, {pin.lng.toFixed(6)}
-          </span>
-        </div>
-      )}
-
-      <div className="mt-8 flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-navy transition hover:bg-gray-100"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-        <button
-          onClick={() => pin && onContinue(pin)}
-          disabled={!pin}
-          className="flex items-center gap-1.5 rounded-lg bg-red px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Continue <ArrowRight className="h-4 w-4" />
-        </button>
       </div>
+    </div>
+  );
+}
+
+function InfoBox({ title, value }: { title: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border-l-4 border-red bg-gray-50 p-4">
+      <h3 className="mb-1 font-heading text-xs font-bold uppercase tracking-wide text-navy">
+        {title}
+      </h3>
+      <div className="text-sm text-gray-600">{value}</div>
     </div>
   );
 }
@@ -203,7 +240,7 @@ function ManualPinFallback({
   };
 
   return (
-    <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-amber-200">
+    <div className="rounded-lg border border-amber-200 bg-white p-4">
       <div className="flex items-start gap-2.5">
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
         <div className="flex-1">

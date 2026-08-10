@@ -4,7 +4,9 @@ export type DumpsterSizeOption = {
   priceMin: number;
   priceMax: number;
   dimensions: string;
+  imageUrl: string;
   perfectFor: string[];
+  includes: string[];
 };
 
 export type RentalDuration = 3 | 5 | 7 | 10 | 14;
