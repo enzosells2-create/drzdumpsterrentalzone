@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, FileText } from "lucide-react";
 import { BookingData } from "@/lib/types";
-import { COMPANY, OVERAGE_FEES, PROHIBITED_ITEMS } from "@/lib/pricing";
+import { COMPANY, INCLUDED_TONS, OVERAGE_FEES, PROHIBITED_ITEMS } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 
 type Props = {
@@ -59,7 +59,7 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
 
         <Section title="What's Included">
           <ul className="list-inside list-disc space-y-1">
-            <li>2 tons (4,000 lbs) of weight included in the base price</li>
+            <li>{INCLUDED_TONS} tons ({(INCLUDED_TONS * 2000).toLocaleString()} lbs) of weight included in the base price</li>
             <li>Delivery to and pickup from the address provided</li>
             <li>{data.rentalDays ?? "—"}-day rental period starting on the delivery date</li>
           </ul>
@@ -81,7 +81,7 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
 
         <Section title="Weight & Overage Fees">
           <ul className="space-y-1">
-            <li>Additional ton over the included 2 tons: <strong className="text-navy">{formatCurrency(OVERAGE_FEES.extraTon)}</strong> per ton</li>
+            <li>Additional ton over the included {INCLUDED_TONS} tons: <strong className="text-navy">{formatCurrency(OVERAGE_FEES.extraTon)}</strong> per ton</li>
             <li>Overloaded dumpster (above fill line): <strong className="text-navy">{formatCurrency(OVERAGE_FEES.overloaded)}</strong></li>
             <li>Each additional day beyond the rental period: <strong className="text-navy">{formatCurrency(OVERAGE_FEES.extraDay)}</strong> per day</li>
             <li>Tires: <strong className="text-navy">{formatCurrency(OVERAGE_FEES.tireEach)}</strong> each</li>

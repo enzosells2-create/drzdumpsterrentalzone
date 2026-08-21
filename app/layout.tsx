@@ -25,7 +25,7 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: "DRZ Dumpster Rental | Livingston, Wayne, Oakland & Macomb Counties, MI",
   description:
-    "Fast, affordable dumpster rentals in Southeast Michigan. 5, 10, 15, and 20 yard dumpsters with 2 tons included and fast delivery & pickup. Call (734) 366-4865.",
+    "Fast, affordable dumpster rentals in Southeast Michigan. 5, 10, 15, 20, and 30 yard dumpsters with 2 tons included and fast delivery & pickup. Call (734) 366-4865.",
 };
 
 export default function RootLayout({

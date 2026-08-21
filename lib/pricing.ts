@@ -11,6 +11,9 @@ import { DumpsterSizeOption } from "./types";
  * oneDayPrice is stored for reference if you want to add a cheaper
  * 1-day option to the booking form later — it isn't used yet.
  */
+/** Tons of weight included in the base price, for every size. */
+export const INCLUDED_TONS = 2;
+
 export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "5-yard",
@@ -18,7 +21,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
     basePrice: 250,
     oneDayPrice: 200,
     perfectFor: ["Small cleanups", "Remodeling", "Junk removal"],
-    includes: ["2 ton capacity", "3-7 day rental", "Fast delivery"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Fast delivery"],
   },
   {
     id: "10-yard",
@@ -26,7 +29,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
     basePrice: 350,
     oneDayPrice: 300,
     perfectFor: ["Medium jobs", "Garage cleanout", "Construction debris"],
-    includes: ["2 ton capacity", "3-7 day rental", "Reliable service"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Reliable service"],
   },
   {
     id: "15-yard",
@@ -34,7 +37,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
     basePrice: 400,
     oneDayPrice: 350,
     perfectFor: ["Large projects", "Home renovations", "Basement cleanup"],
-    includes: ["2 ton capacity", "3-7 day rental", "Professional service"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Professional service"],
   },
   {
     id: "20-yard",
@@ -42,7 +45,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
     basePrice: 450,
     oneDayPrice: 400,
     perfectFor: ["Major renovations", "Commercial jobs", "Large cleanouts"],
-    includes: ["2 ton capacity", "3-7 day rental", "Premium service"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Premium service"],
   },
   {
     id: "30-yard",
@@ -50,11 +53,11 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
     basePrice: 600,
     oneDayPrice: 550,
     perfectFor: ["New construction", "Whole-building cleanouts", "Large commercial jobs"],
-    includes: ["2 ton capacity", "3-7 day rental", "Priority service"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Priority service"],
   },
 ];
 
-export const INCLUDED_FEATURES = ["2 tons of weight included", "Fast delivery & pickup"];
+export const INCLUDED_FEATURES = [`${INCLUDED_TONS} tons of weight included`, "Fast delivery & pickup"];
 
 export const RENTAL_DURATION_OPTIONS = [3, 5, 7, 10, 14] as const;
 
