@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, FileText } from "lucide-react";
 import { BookingData } from "@/lib/types";
-import { COMPANY, INCLUDED_TONS, OVERAGE_FEES, PROHIBITED_ITEMS } from "@/lib/pricing";
+import { COMPANY, getDurationLabel, INCLUDED_TONS, OVERAGE_FEES, PROHIBITED_ITEMS } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 
 type Props = {
@@ -43,7 +43,7 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
         <SummaryItem label="Size" value={data.size?.label ?? "—"} />
         <SummaryItem label="Price" value={data.price !== null ? formatCurrency(data.price) : "—"} />
         <SummaryItem label="Delivery" value={deliveryDateLabel} />
-        <SummaryItem label="Duration" value={data.rentalDays ? `${data.rentalDays} days` : "—"} />
+        <SummaryItem label="Duration" value={data.rentalDays ? getDurationLabel(data.rentalDays) : "—"} />
       </div>
 
       <div className="mt-6 space-y-5 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
@@ -61,7 +61,10 @@ export default function StepContract({ data, onBack, onContinue }: Props) {
           <ul className="list-inside list-disc space-y-1">
             <li>{INCLUDED_TONS} tons ({(INCLUDED_TONS * 2000).toLocaleString()} lbs) of weight included in the base price</li>
             <li>Delivery to and pickup from the address provided</li>
-            <li>{data.rentalDays ?? "—"}-day rental period starting on the delivery date</li>
+            <li>
+              {data.rentalDays ? getDurationLabel(data.rentalDays) : "—"} rental period starting
+              on the delivery date
+            </li>
           </ul>
         </Section>
 

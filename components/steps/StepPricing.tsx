@@ -46,8 +46,11 @@ export default function StepPricing({
             <div className="flex flex-1 flex-col p-5">
               <h3 className="font-heading text-xl font-bold text-navy">{size.label}</h3>
               <p className="mt-2 font-heading text-2xl font-extrabold text-red">
-                ${size.basePrice}{" "}
-                <span className="text-sm font-medium text-gray-400">/ 3 days</span>
+                ${size.oneDayPrice}{" "}
+                <span className="text-sm font-medium text-gray-400">/ day</span>
+              </p>
+              <p className="text-xs text-gray-400">
+                ${size.threeDayPrice} for 3 days · ${size.weeklyPrice} for a week
               </p>
 
               <div className="mt-4 flex-1 space-y-3 border-b border-gray-100 pb-4 text-sm text-gray-600">

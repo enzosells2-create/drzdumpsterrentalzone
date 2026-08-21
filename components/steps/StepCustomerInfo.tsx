@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { BookingData } from "@/lib/types";
-import { calculatePrice, OVERAGE_FEES, RENTAL_DURATION_OPTIONS } from "@/lib/pricing";
+import { calculatePrice, RENTAL_DURATION_OPTIONS } from "@/lib/pricing";
 import { formatCurrency, formatPhone, isValidEmail } from "@/lib/format";
 
 type Props = {
@@ -71,8 +71,8 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
       errors[field] ? "border-red" : "border-gray-200"
     }`;
 
-  const previewPrice = data.size
-    ? calculatePrice(data.size, Number(form.rentalDays) || 3)
+  const previewPrice = data.size && form.rentalDays
+    ? calculatePrice(data.size, Number(form.rentalDays))
     : null;
 
   return (
@@ -84,11 +84,12 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
           <div>
             <p className="font-semibold text-navy">Selected: {data.size.label} Dumpster</p>
             <p className="text-xs text-gray-500">
-              ${data.size.basePrice} for 3 days, +${OVERAGE_FEES.extraDay} per additional day
+              ${data.size.oneDayPrice}/day · ${data.size.threeDayPrice}/3 days · $
+              {data.size.weeklyPrice}/week
             </p>
           </div>
           <p className="font-heading text-xl font-extrabold text-red">
-            {previewPrice !== null ? formatCurrency(previewPrice) : "—"}
+            {previewPrice !== null ? formatCurrency(previewPrice) : "Pick a duration"}
           </p>
         </div>
       )}
@@ -183,11 +184,11 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
             onChange={(e) => set("rentalDays", e.target.value)}
           >
             <option value="" disabled>
-              Select days
+              Select duration
             </option>
-            {RENTAL_DURATION_OPTIONS.map((days) => (
-              <option key={days} value={days}>
-                {days} days
+            {RENTAL_DURATION_OPTIONS.map((option) => (
+              <option key={option.days} value={option.days}>
+                {option.label}
               </option>
             ))}
           </select>

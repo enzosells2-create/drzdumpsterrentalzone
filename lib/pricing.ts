@@ -6,10 +6,10 @@ import { DumpsterSizeOption } from "./types";
  * this single array. Everything else on the site (pricing cards,
  * contract, payment summary) reads from here.
  *
- * basePrice is the flat rate for a BASE_RENTAL_DAYS-day rental (see
- * below). Renting longer adds OVERAGE_FEES.extraDay per extra day.
- * oneDayPrice is stored for reference if you want to add a cheaper
- * 1-day option to the booking form later — it isn't used yet.
+ * oneDayPrice and threeDayPrice are flat rates. weeklyPrice is the
+ * rate for a full week — 2-week/3-week/1-month plans just multiply
+ * weeklyPrice by 2, 3, and 4 (no volume discount). See
+ * RENTAL_DURATION_OPTIONS and calculatePrice below.
  */
 /** Tons of weight included in the base price, for every size. */
 export const INCLUDED_TONS = 2;
@@ -18,51 +18,66 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "5-yard",
     label: "5 Yard",
-    basePrice: 250,
-    oneDayPrice: 200,
+    oneDayPrice: 150,
+    threeDayPrice: 200,
+    weeklyPrice: 250,
     perfectFor: ["Small cleanups", "Remodeling", "Junk removal"],
-    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Fast delivery"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "Flexible rental terms", "Fast delivery"],
   },
   {
     id: "10-yard",
     label: "10 Yard",
-    basePrice: 350,
-    oneDayPrice: 300,
+    oneDayPrice: 250,
+    threeDayPrice: 300,
+    weeklyPrice: 350,
     perfectFor: ["Medium jobs", "Garage cleanout", "Construction debris"],
-    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Reliable service"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "Flexible rental terms", "Reliable service"],
   },
   {
     id: "15-yard",
     label: "15 Yard",
-    basePrice: 400,
-    oneDayPrice: 350,
+    oneDayPrice: 300,
+    threeDayPrice: 350,
+    weeklyPrice: 400,
     perfectFor: ["Large projects", "Home renovations", "Basement cleanup"],
-    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Professional service"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "Flexible rental terms", "Professional service"],
   },
   {
     id: "20-yard",
     label: "20 Yard",
-    basePrice: 450,
-    oneDayPrice: 400,
+    oneDayPrice: 350,
+    threeDayPrice: 400,
+    weeklyPrice: 450,
     perfectFor: ["Major renovations", "Commercial jobs", "Large cleanouts"],
-    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Premium service"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "Flexible rental terms", "Premium service"],
   },
   {
     id: "30-yard",
     label: "30 Yard",
-    basePrice: 600,
-    oneDayPrice: 550,
+    oneDayPrice: 500,
+    threeDayPrice: 550,
+    weeklyPrice: 600,
     perfectFor: ["New construction", "Whole-building cleanouts", "Large commercial jobs"],
-    includes: [`${INCLUDED_TONS} ton capacity`, "3-7 day rental", "Priority service"],
+    includes: [`${INCLUDED_TONS} ton capacity`, "Flexible rental terms", "Priority service"],
   },
 ];
 
 export const INCLUDED_FEATURES = [`${INCLUDED_TONS} tons of weight included`, "Fast delivery & pickup"];
 
-export const RENTAL_DURATION_OPTIONS = [3, 5, 7, 10, 14] as const;
-
-/** Number of rental days included in each size's basePrice. */
-export const BASE_RENTAL_DAYS = 3;
+/**
+ * Rental duration plans offered on the booking form. `days` is a nominal
+ * day count used for display and as the BookingData.rentalDays value;
+ * `weeks` is how many times weeklyPrice is multiplied for that plan
+ * (0 means the plan uses a flat rate instead — see calculatePrice).
+ */
+export const RENTAL_DURATION_OPTIONS = [
+  { days: 1, weeks: 0, label: "1 Day" },
+  { days: 3, weeks: 0, label: "3 Days" },
+  { days: 7, weeks: 1, label: "1 Week" },
+  { days: 14, weeks: 2, label: "2 Weeks" },
+  { days: 21, weeks: 3, label: "3 Weeks" },
+  { days: 30, weeks: 4, label: "1 Month" },
+] as const;
 
 export const TAX_RATE = 0.06;
 
@@ -74,9 +89,16 @@ export const OVERAGE_FEES = {
   fridgeEach: 100,
 };
 
+export function getDurationLabel(days: number): string {
+  return RENTAL_DURATION_OPTIONS.find((o) => o.days === days)?.label ?? `${days} days`;
+}
+
 export function calculatePrice(size: DumpsterSizeOption, rentalDays: number): number {
-  const extraDays = Math.max(0, rentalDays - BASE_RENTAL_DAYS);
-  return size.basePrice + extraDays * OVERAGE_FEES.extraDay;
+  const plan = RENTAL_DURATION_OPTIONS.find((o) => o.days === rentalDays);
+  if (!plan) return size.weeklyPrice;
+  if (plan.days === 1) return size.oneDayPrice;
+  if (plan.days === 3) return size.threeDayPrice;
+  return size.weeklyPrice * plan.weeks;
 }
 
 export const PROHIBITED_ITEMS = [

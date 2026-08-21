@@ -23,9 +23,9 @@ export default function BookingFlow() {
   }
 
   function handleSelectSize(size: DumpsterSizeOption) {
-    // Price starts as the base (3-day) rate; it's recalculated once the
+    // Price starts as a preview (3-day rate); it's recalculated once the
     // customer picks a rental duration in the next step.
-    update({ size, price: size.basePrice });
+    update({ size, price: size.threeDayPrice });
     setStep(2);
   }
 

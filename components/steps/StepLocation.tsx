@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Loader2, MapPin } from "lucide-react";
 import { BookingData } from "@/lib/types";
+import { getDurationLabel } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 
 // ────────────────────────────────────────────────────────────────────
@@ -186,7 +187,7 @@ export default function StepLocation({ data, onBack, onContinue }: Props) {
             />
             <InfoBox
               title="Rental Details"
-              value={`${data.rentalDays ?? "—"} days • ${
+              value={`${data.rentalDays ? getDurationLabel(data.rentalDays) : "—"} • ${
                 data.price !== null ? formatCurrency(data.price) : "—"
               } • Contact: ${data.phone || "—"}`}
             />

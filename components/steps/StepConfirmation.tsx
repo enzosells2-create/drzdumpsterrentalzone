@@ -1,6 +1,6 @@
 import { MapPin, Phone } from "lucide-react";
 import { BookingData } from "@/lib/types";
-import { COMPANY } from "@/lib/pricing";
+import { COMPANY, getDurationLabel } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 
 type Props = {
@@ -47,7 +47,10 @@ export default function StepConfirmation({ data, confirmationNumber, onReset }: 
           value={`${data.street}, ${data.city}, ${data.state} ${data.zip}`}
         />
         <SummaryRow label="Delivery Date" value={deliveryDateLabel} />
-        <SummaryRow label="Rental Duration" value={data.rentalDays ? `${data.rentalDays} days` : "—"} />
+        <SummaryRow
+          label="Rental Duration"
+          value={data.rentalDays ? getDurationLabel(data.rentalDays) : "—"}
+        />
         <SummaryRow
           label="Pinned Location"
           value={

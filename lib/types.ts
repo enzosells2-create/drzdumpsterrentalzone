@@ -1,15 +1,18 @@
 export type DumpsterSizeOption = {
   id: string;
   label: string;
-  /** Flat rate for the base rental period (see BASE_RENTAL_DAYS in lib/pricing.ts). */
-  basePrice: number;
-  /** Optional cheaper rate for a 1-day rental, if you want to offer that option later. */
-  oneDayPrice?: number;
+  /** Flat rate for a 1-day rental. */
+  oneDayPrice: number;
+  /** Flat rate for a 3-day rental. */
+  threeDayPrice: number;
+  /** Rate for a full week; 2/3-week and 1-month plans are multiples of this. */
+  weeklyPrice: number;
   perfectFor: string[];
   includes: string[];
 };
 
-export type RentalDuration = 3 | 5 | 7 | 10 | 14;
+/** Nominal day counts for the rental duration plans (see RENTAL_DURATION_OPTIONS). */
+export type RentalDuration = 1 | 3 | 7 | 14 | 21 | 30;
 
 export type BookingData = {
   size: DumpsterSizeOption | null;
