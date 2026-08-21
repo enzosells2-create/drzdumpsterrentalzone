@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { DUMPSTER_SIZES } from "@/lib/pricing";
 import { DumpsterSizeOption } from "@/lib/types";
 
@@ -27,28 +27,27 @@ export default function StepPricing({
         </p>
       </div>
 
-      <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
         {DUMPSTER_SIZES.map((size) => (
           <button
             key={size.id}
             onClick={() => onSelect(size)}
             className="card-hover flex flex-col overflow-hidden rounded-2xl border-2 border-transparent bg-white text-left shadow-sm ring-1 ring-gray-100 hover:border-red"
           >
-            <div className="relative h-48 w-full overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={size.imageUrl}
-                alt={`${size.label} dumpster`}
-                className="h-full w-full object-cover"
-              />
+            <div className="relative flex h-48 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-navy to-navy-light">
+              <Trash2 className="h-16 w-16 text-white/20" strokeWidth={1.5} />
+              <span className="absolute font-heading text-5xl font-extrabold text-white">
+                {size.label.split(" ")[0]}
+                <span className="ml-1 text-xl font-semibold text-white/70">yd</span>
+              </span>
               <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-red to-red-dark" />
             </div>
 
             <div className="flex flex-1 flex-col p-5">
               <h3 className="font-heading text-xl font-bold text-navy">{size.label}</h3>
-              <p className="mt-0.5 text-xs text-gray-400">{size.dimensions}</p>
               <p className="mt-2 font-heading text-2xl font-extrabold text-red">
-                ${size.priceMin} – ${size.priceMax}
+                ${size.basePrice}{" "}
+                <span className="text-sm font-medium text-gray-400">/ 3 days</span>
               </p>
 
               <div className="mt-4 flex-1 space-y-3 border-b border-gray-100 pb-4 text-sm text-gray-600">

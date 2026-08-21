@@ -1,10 +1,10 @@
 export type DumpsterSizeOption = {
   id: string;
   label: string;
-  priceMin: number;
-  priceMax: number;
-  dimensions: string;
-  imageUrl: string;
+  /** Flat rate for the base rental period (see BASE_RENTAL_DAYS in lib/pricing.ts). */
+  basePrice: number;
+  /** Optional cheaper rate for a 1-day rental, if you want to offer that option later. */
+  oneDayPrice?: number;
   perfectFor: string[];
   includes: string[];
 };

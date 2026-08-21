@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { BookingData } from "@/lib/types";
-import { RENTAL_DURATION_OPTIONS } from "@/lib/pricing";
+import { calculatePrice, OVERAGE_FEES, RENTAL_DURATION_OPTIONS } from "@/lib/pricing";
 import { formatCurrency, formatPhone, isValidEmail } from "@/lib/format";
 
 type Props = {
@@ -71,17 +71,24 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
       errors[field] ? "border-red" : "border-gray-200"
     }`;
 
+  const previewPrice = data.size
+    ? calculatePrice(data.size, Number(form.rentalDays) || 3)
+    : null;
+
   return (
     <div className="mx-auto max-w-2xl">
       <h2 className="font-heading text-2xl font-bold text-navy sm:text-3xl">Your Information</h2>
 
       {data.size && (
         <div className="mt-4 flex items-center justify-between rounded-lg border-l-4 border-red bg-blue-50/60 p-4">
-          <p className="font-semibold text-navy">
-            Selected: {data.size.label} Dumpster
-          </p>
+          <div>
+            <p className="font-semibold text-navy">Selected: {data.size.label} Dumpster</p>
+            <p className="text-xs text-gray-500">
+              ${data.size.basePrice} for 3 days, +${OVERAGE_FEES.extraDay} per additional day
+            </p>
+          </div>
           <p className="font-heading text-xl font-extrabold text-red">
-            {data.price !== null ? formatCurrency(data.price) : `$${data.size.priceMin}–$${data.size.priceMax}`}
+            {previewPrice !== null ? formatCurrency(previewPrice) : "—"}
           </p>
         </div>
       )}

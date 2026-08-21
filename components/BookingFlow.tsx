@@ -11,7 +11,7 @@ import StepLocation from "./steps/StepLocation";
 import StepConfirmation from "./steps/StepConfirmation";
 import { BookingData, DumpsterSizeOption, initialBookingData } from "@/lib/types";
 import { generateConfirmationNumber, saveBooking } from "@/lib/storage";
-import { midpointPrice } from "@/lib/pricing";
+import { calculatePrice } from "@/lib/pricing";
 
 export default function BookingFlow() {
   const [step, setStep] = useState(1);
@@ -23,7 +23,9 @@ export default function BookingFlow() {
   }
 
   function handleSelectSize(size: DumpsterSizeOption) {
-    update({ size, price: midpointPrice(size) });
+    // Price starts as the base (3-day) rate; it's recalculated once the
+    // customer picks a rental duration in the next step.
+    update({ size, price: size.basePrice });
     setStep(2);
   }
 
@@ -78,7 +80,9 @@ export default function BookingFlow() {
               data={data}
               onBack={() => setStep(1)}
               onContinue={(patch) => {
-                update(patch);
+                const rentalDays = patch.rentalDays ?? data.rentalDays;
+                const price = data.size && rentalDays ? calculatePrice(data.size, rentalDays) : data.price;
+                update({ ...patch, price });
                 setStep(3);
               }}
             />
