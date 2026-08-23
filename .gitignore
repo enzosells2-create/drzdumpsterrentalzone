@@ -21,3 +21,4 @@ npm-debug.log*
 # local SQLite database (dev only — production uses a real Postgres DB)
 *.db
 *.db-journal
+tsconfig.tsbuildinfo

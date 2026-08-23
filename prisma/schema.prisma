@@ -43,8 +43,30 @@ model Booking {
   cardBrand String?
   cardLast4 String?
 
+  // Set together when a valid promo code was applied at checkout; both are
+  // null on a booking made without one. discountAmount is recorded (not just
+  // recomputed) so past bookings still show what was actually taken off even
+  // after the code that earned it is deactivated or deleted.
+  promoCode      String?
+  discountAmount Float?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([sizeId, startDate, endDate])
+}
+
+// A discount code the owner posts on social media. Meant to be short-lived —
+// twice a week the owner creates a new one and deactivates the old one from
+// /admin/promo-codes. `active` is the switch used for that; `expiresAt` is an
+// optional belt-and-suspenders auto-expiry so a forgotten code doesn't stay
+// valid forever.
+model PromoCode {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  discountPercent Int      @default(15)
+  active          Boolean  @default(true)
+  expiresAt       DateTime?
+  timesUsed       Int      @default(0)
+  createdAt       DateTime @default(now())
 }

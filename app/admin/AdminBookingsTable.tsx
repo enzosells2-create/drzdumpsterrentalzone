@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, MapPin, Phone, Trash2 } from "lucide-react";
+import { LogOut, MapPin, Phone, Tag, Trash2 } from "lucide-react";
 import { COMPANY } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 import { DumpsterSizeOption } from "@/lib/types";
@@ -27,6 +28,8 @@ export type SerializedBooking = {
   pinLng: number | null;
   cardBrand: string | null;
   cardLast4: string | null;
+  promoCode: string | null;
+  discountAmount: number | null;
   createdAt: string;
 };
 
@@ -110,12 +113,20 @@ export default function AdminBookingsTable({
               <p className="text-xs text-white/70">Bookings Admin</p>
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-          >
-            <LogOut className="h-4 w-4" /> Log Out
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/promo-codes"
+              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
+            >
+              <Tag className="h-4 w-4" /> Promo Codes
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
+            >
+              <LogOut className="h-4 w-4" /> Log Out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -178,7 +189,14 @@ export default function AdminBookingsTable({
                               {formatDate(b.startDate)} – {formatDate(b.endDate)}
                               <p className="text-xs text-gray-400">{b.rentalDays} days</p>
                             </td>
-                            <td className="px-5 py-3 font-semibold text-navy">{formatCurrency(b.price)}</td>
+                            <td className="px-5 py-3 font-semibold text-navy">
+                              {formatCurrency(b.price)}
+                              {b.promoCode && (
+                                <p className="mt-0.5 flex items-center gap-1 text-xs font-normal text-green-600">
+                                  <Tag className="h-3 w-3" /> {b.promoCode} (-{formatCurrency(b.discountAmount ?? 0)})
+                                </p>
+                              )}
+                            </td>
                             <td className="px-5 py-3">
                               <select
                                 value={b.status}

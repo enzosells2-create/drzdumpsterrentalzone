@@ -38,6 +38,10 @@ export type BookingData = {
   cardLast4: string;
   cardBrand: string;
 
+  promoCode: string | null;
+  discountPercent: number | null;
+  discountAmount: number | null;
+
   pinLat: number | null;
   pinLng: number | null;
 };
@@ -63,6 +67,10 @@ export const initialBookingData: BookingData = {
   cardName: "",
   cardLast4: "",
   cardBrand: "",
+
+  promoCode: null,
+  discountPercent: null,
+  discountAmount: null,
 
   pinLat: null,
   pinLng: null,

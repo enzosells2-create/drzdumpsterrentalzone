@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Tag, X } from "lucide-react";
 import { BookingData } from "@/lib/types";
 import { TAX_RATE } from "@/lib/pricing";
 import {
@@ -42,9 +42,54 @@ export default function StepPayment({ data, onBack, onContinue }: Props) {
   const [cardCvc, setCardCvc] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
 
+  const [promoInput, setPromoInput] = useState(data.promoCode ?? "");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountPercent: number } | null>(
+    data.promoCode && data.discountPercent ? { code: data.promoCode, discountPercent: data.discountPercent } : null
+  );
+  const [promoChecking, setPromoChecking] = useState(false);
+  const [promoError, setPromoError] = useState("");
+
   const basePrice = data.price ?? 0;
-  const tax = Math.round(basePrice * TAX_RATE * 100) / 100;
-  const total = Math.round((basePrice + tax) * 100) / 100;
+  const discount = appliedPromo
+    ? Math.round(basePrice * (appliedPromo.discountPercent / 100) * 100) / 100
+    : 0;
+  const discountedSubtotal = Math.round((basePrice - discount) * 100) / 100;
+  const tax = Math.round(discountedSubtotal * TAX_RATE * 100) / 100;
+  const total = Math.round((discountedSubtotal + tax) * 100) / 100;
+
+  async function handleApplyPromo() {
+    setPromoError("");
+    if (!promoInput.trim()) {
+      setPromoError("Enter a promo code.");
+      return;
+    }
+    setPromoChecking(true);
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoInput.trim() }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.valid) {
+        setPromoError(result.error || "That promo code isn't valid.");
+        setAppliedPromo(null);
+        return;
+      }
+      setAppliedPromo({ code: result.code, discountPercent: result.discountPercent });
+      setPromoInput(result.code);
+    } catch {
+      setPromoError("Couldn't check that code — check your connection and try again.");
+    } finally {
+      setPromoChecking(false);
+    }
+  }
+
+  function handleRemovePromo() {
+    setAppliedPromo(null);
+    setPromoInput("");
+    setPromoError("");
+  }
 
   const digits = cardNumber.replace(/\D/g, "");
   const brand = detectCardBrand(cardNumber);
@@ -70,6 +115,9 @@ export default function StepPayment({ data, onBack, onContinue }: Props) {
       cardName: cardName.trim(),
       cardLast4: digits.slice(-4),
       cardBrand: brand,
+      promoCode: appliedPromo?.code ?? null,
+      discountPercent: appliedPromo?.discountPercent ?? null,
+      discountAmount: appliedPromo ? discount : null,
     });
   }
 
@@ -98,10 +146,63 @@ export default function StepPayment({ data, onBack, onContinue }: Props) {
             </h3>
             <div className="mt-3 space-y-2 text-sm">
               <Row label={`${data.size?.label ?? "Dumpster"} rental`} value={formatCurrency(basePrice)} />
+              {appliedPromo && (
+                <Row
+                  label={`Promo ${appliedPromo.code} (-${appliedPromo.discountPercent}%)`}
+                  value={`-${formatCurrency(discount)}`}
+                  discount
+                />
+              )}
               <Row label={`Tax (${(TAX_RATE * 100).toFixed(0)}%)`} value={formatCurrency(tax)} />
               <div className="border-t border-gray-100 pt-2">
                 <Row label="Total" value={formatCurrency(total)} bold />
               </div>
+            </div>
+
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              {appliedPromo ? (
+                <div className="flex items-center justify-between rounded-lg bg-green-50 px-3.5 py-2.5 text-sm ring-1 ring-green-200">
+                  <span className="flex items-center gap-1.5 font-semibold text-green-700">
+                    <Tag className="h-4 w-4" /> {appliedPromo.code} applied
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRemovePromo}
+                    className="flex items-center gap-1 text-xs font-medium text-green-700 underline-offset-2 hover:underline"
+                  >
+                    <X className="h-3.5 w-3.5" /> Remove
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-navy">Promo Code</label>
+                  <div className="flex gap-2">
+                    <input
+                      className={`w-full rounded-lg border px-3.5 py-2.5 text-sm uppercase text-navy outline-none transition focus:ring-2 focus:ring-navy-light ${
+                        promoError ? "border-red" : "border-gray-200"
+                      }`}
+                      value={promoInput}
+                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleApplyPromo();
+                        }
+                      }}
+                      placeholder="Enter code"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyPromo}
+                      disabled={promoChecking}
+                      className="shrink-0 rounded-lg bg-navy px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {promoChecking ? "Checking…" : "Apply"}
+                    </button>
+                  </div>
+                  {promoError && <p className="mt-1 text-xs font-medium text-red">{promoError}</p>}
+                </div>
+              )}
             </div>
           </div>
 
@@ -202,11 +303,25 @@ export default function StepPayment({ data, onBack, onContinue }: Props) {
   );
 }
 
-function Row({ label, value, bold = false }: { label: string; value: string; bold?: boolean }) {
+function Row({
+  label,
+  value,
+  bold = false,
+  discount = false,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  discount?: boolean;
+}) {
   return (
-    <div className={`flex items-center justify-between ${bold ? "font-heading text-base font-bold text-navy" : "text-gray-600"}`}>
+    <div
+      className={`flex items-center justify-between ${
+        bold ? "font-heading text-base font-bold text-navy" : discount ? "text-green-600" : "text-gray-600"
+      }`}
+    >
       <span>{label}</span>
-      <span>{value}</span>
+      <span className={discount ? "font-semibold" : ""}>{value}</span>
     </div>
   );
 }

@@ -30,6 +30,8 @@ export default async function AdminPage() {
     pinLng: b.pinLng,
     cardBrand: b.cardBrand,
     cardLast4: b.cardLast4,
+    promoCode: b.promoCode,
+    discountAmount: b.discountAmount,
     createdAt: b.createdAt.toISOString(),
   }));
 

@@ -1,6 +1,6 @@
 import { MapPin, Phone } from "lucide-react";
 import { BookingData } from "@/lib/types";
-import { COMPANY, getDurationLabel } from "@/lib/pricing";
+import { COMPANY, getDurationLabel, TAX_RATE } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 
 type Props = {
@@ -18,6 +18,11 @@ const NEXT_STEPS = [
 ];
 
 export default function StepConfirmation({ data, confirmationNumber, onReset }: Props) {
+  const basePrice = data.price ?? 0;
+  const discount = data.discountAmount ?? 0;
+  const subtotal = Math.round((basePrice - discount) * 100) / 100;
+  const totalPaid = Math.round((subtotal + subtotal * TAX_RATE) * 100) / 100;
+
   const deliveryDateLabel = data.deliveryDate
     ? new Date(data.deliveryDate + "T00:00:00").toLocaleDateString("en-US", {
         weekday: "long",
@@ -42,6 +47,12 @@ export default function StepConfirmation({ data, confirmationNumber, onReset }: 
           label={data.size?.label ?? "Dumpster"}
           value={data.price !== null ? formatCurrency(data.price) : "—"}
         />
+        {data.promoCode && data.discountAmount && (
+          <SummaryRow
+            label={`Promo ${data.promoCode} applied`}
+            value={`-${formatCurrency(data.discountAmount)}`}
+          />
+        )}
         <SummaryRow
           label="Delivery Address"
           value={`${data.street}, ${data.city}, ${data.state} ${data.zip}`}
@@ -62,7 +73,11 @@ export default function StepConfirmation({ data, confirmationNumber, onReset }: 
         />
         <SummaryRow
           label="Total Paid"
-          value={data.cardLast4 ? `${data.cardBrand} •••• ${data.cardLast4}` : "—"}
+          value={
+            data.cardLast4
+              ? `${formatCurrency(totalPaid)} · ${data.cardBrand} •••• ${data.cardLast4}`
+              : "—"
+          }
           last
         />
       </div>

@@ -50,6 +50,7 @@ export default function BookingFlow() {
         pinLng: pin.lng,
         cardBrand: data.cardBrand || null,
         cardLast4: data.cardLast4 || null,
+        promoCode: data.promoCode || null,
       }),
     });
 
@@ -62,7 +63,12 @@ export default function BookingFlow() {
     }
 
     setConfirmationNumber(result.confirmationNumber);
-    update({ pinLat: pin.lat, pinLng: pin.lng });
+    // The server re-validates the promo code itself and is authoritative on
+    // the discount actually applied, so sync that back. `data.price` stays
+    // the base (pre-discount) rate throughout the flow — the confirmation
+    // page subtracts the discount from it for display, so overwriting it
+    // here with the server's already-discounted figure would double-count.
+    update({ pinLat: pin.lat, pinLng: pin.lng, discountAmount: result.discountAmount });
     setStep(6);
   }
 
