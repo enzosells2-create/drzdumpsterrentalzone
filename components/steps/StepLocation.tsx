@@ -247,6 +247,57 @@ function InfoBox({ title, value }: { title: string; value: React.ReactNode }) {
   );
 }
 
+// Keeps the field's own raw text while the user is typing so an in-progress
+// entry like "-" or "-83." (which Number() parses as NaN or truncates)
+// doesn't get overwritten mid-keystroke by a round-tripped controlled value.
+// Only commits a number up to the parent once the text actually parses.
+function CoordinateField({
+  label,
+  placeholder,
+  value,
+  onCommit,
+}: {
+  label: string;
+  placeholder: string;
+  value: number | undefined;
+  onCommit: (n: number) => void;
+}) {
+  const [text, setText] = useState(value !== undefined ? String(value) : "");
+
+  // Stay in sync if the pin is reset/cleared from outside (e.g. address change).
+  useEffect(() => {
+    if (value === undefined) {
+      setText("");
+    } else if (Number(text) !== value) {
+      setText(String(value));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-navy">{label}</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-navy outline-none focus:ring-2 focus:ring-navy-light"
+        value={text}
+        onChange={(e) => {
+          const next = e.target.value;
+          // Only allow characters valid in a signed decimal as the user types.
+          if (!/^-?\d*\.?\d*$/.test(next)) return;
+          setText(next);
+          const parsed = Number(next);
+          if (next !== "" && next !== "-" && !Number.isNaN(parsed)) {
+            onCommit(parsed);
+          }
+        }}
+        placeholder={placeholder}
+      />
+    </label>
+  );
+}
+
 function ManualPinFallback({
   status,
   pin,
@@ -275,28 +326,18 @@ function ManualPinFallback({
           </p>
 
           <div className="mt-3 grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-navy">Latitude</span>
-              <input
-                type="number"
-                step="any"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-navy outline-none focus:ring-2 focus:ring-navy-light"
-                value={pin?.lat ?? ""}
-                onChange={(e) => onSetPin({ lat: Number(e.target.value), lng: pin?.lng ?? 0 })}
-                placeholder="42.3684"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-navy">Longitude</span>
-              <input
-                type="number"
-                step="any"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-navy outline-none focus:ring-2 focus:ring-navy-light"
-                value={pin?.lng ?? ""}
-                onChange={(e) => onSetPin({ lat: pin?.lat ?? 0, lng: Number(e.target.value) })}
-                placeholder="-83.3616"
-              />
-            </label>
+            <CoordinateField
+              label="Latitude"
+              placeholder="42.3684"
+              value={pin?.lat}
+              onCommit={(lat) => onSetPin({ lat, lng: pin?.lng ?? 0 })}
+            />
+            <CoordinateField
+              label="Longitude"
+              placeholder="-83.3616"
+              value={pin?.lng}
+              onCommit={(lng) => onSetPin({ lat: pin?.lat ?? 0, lng })}
+            />
           </div>
         </div>
       </div>
