@@ -27,6 +27,8 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
     rentalDays: data.rentalDays ?? "",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -49,10 +51,42 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
     return next;
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     const validation = validate();
     setErrors(validation);
+    setAvailabilityError("");
     if (Object.keys(validation).length > 0) return;
+    if (!data.size) return;
+
+    setCheckingAvailability(true);
+    try {
+      const res = await fetch("/api/availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sizeId: data.size.id,
+          deliveryDate: form.deliveryDate,
+          rentalDays: Number(form.rentalDays),
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setAvailabilityError(result.error || "Couldn't check availability. Please try again.");
+        return;
+      }
+      if (!result.available) {
+        setAvailabilityError(
+          `Every ${data.size.label} dumpster is already booked for that time period. Please pick a different delivery date, duration, or size.`
+        );
+        return;
+      }
+    } catch {
+      setAvailabilityError("Couldn't check availability — check your connection and try again.");
+      return;
+    } finally {
+      setCheckingAvailability(false);
+    }
+
     onContinue({
       fullName: form.fullName.trim(),
       email: form.email.trim(),
@@ -195,6 +229,12 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
         </Field>
       </div>
 
+      {availabilityError && (
+        <p className="mt-6 rounded-lg bg-red/10 px-3.5 py-2.5 text-sm font-medium text-red">
+          {availabilityError}
+        </p>
+      )}
+
       <div className="mt-8 flex items-center justify-between">
         <button
           onClick={onBack}
@@ -204,9 +244,11 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
         </button>
         <button
           onClick={handleContinue}
-          className="flex items-center gap-1.5 rounded-lg bg-red px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-dark"
+          disabled={checkingAvailability}
+          className="flex items-center gap-1.5 rounded-lg bg-red px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Continue <ArrowRight className="h-4 w-4" />
+          {checkingAvailability ? "Checking availability…" : "Continue"}
+          <ArrowRight className="h-4 w-4" />
         </button>
       </div>
     </div>

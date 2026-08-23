@@ -15,3 +15,9 @@
 .DS_Store
 *.pem
 npm-debug.log*
+
+/lib/generated/prisma
+
+# local SQLite database (dev only — production uses a real Postgres DB)
+*.db
+*.db-journal

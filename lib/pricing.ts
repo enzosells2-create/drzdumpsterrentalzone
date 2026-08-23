@@ -18,6 +18,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "5-yard",
     label: "5 Yard",
+    units: 1,
     oneDayPrice: 150,
     threeDayPrice: 200,
     weeklyPrice: 250,
@@ -27,6 +28,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "10-yard",
     label: "10 Yard",
+    units: 1,
     oneDayPrice: 250,
     threeDayPrice: 300,
     weeklyPrice: 350,
@@ -36,6 +38,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "15-yard",
     label: "15 Yard",
+    units: 1,
     oneDayPrice: 300,
     threeDayPrice: 350,
     weeklyPrice: 400,
@@ -45,6 +48,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "20-yard",
     label: "20 Yard",
+    units: 3,
     oneDayPrice: 350,
     threeDayPrice: 400,
     weeklyPrice: 450,
@@ -54,6 +58,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "30-yard",
     label: "30 Yard",
+    units: 1,
     oneDayPrice: 500,
     threeDayPrice: 550,
     weeklyPrice: 600,

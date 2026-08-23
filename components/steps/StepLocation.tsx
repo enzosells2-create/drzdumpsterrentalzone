@@ -48,13 +48,27 @@ type Pin = { lat: number; lng: number };
 type Props = {
   data: BookingData;
   onBack: () => void;
-  onContinue: (pin: Pin) => void;
+  onContinue: (pin: Pin) => Promise<void>;
 };
 
 export default function StepLocation({ data, onBack, onContinue }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [pin, setPin] = useState<Pin | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  async function handleComplete() {
+    if (!pin) return;
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      await onContinue(pin);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setSubmitting(false);
+    }
+  }
 
   const fullAddress = `${data.street}, ${data.city}, ${data.state} ${data.zip}`;
 
@@ -193,17 +207,25 @@ export default function StepLocation({ data, onBack, onContinue }: Props) {
             />
           </div>
 
+          {submitError && (
+            <p className="mt-4 rounded-lg bg-red/10 px-3.5 py-2.5 text-sm font-medium text-red">
+              {submitError}
+            </p>
+          )}
+
           <div className="mt-6 flex flex-col gap-3">
             <button
-              onClick={() => pin && onContinue(pin)}
-              disabled={!pin}
+              onClick={handleComplete}
+              disabled={!pin || submitting}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-red py-3 text-sm font-semibold text-white transition hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Complete Your Booking <ArrowRight className="h-4 w-4" />
+              {submitting ? "Booking…" : "Complete Your Booking"}
+              <ArrowRight className="h-4 w-4" />
             </button>
             <button
               onClick={onBack}
-              className="flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-navy transition hover:bg-gray-100"
+              disabled={submitting}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-navy transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ArrowLeft className="h-4 w-4" /> Back
             </button>

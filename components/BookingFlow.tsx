@@ -10,7 +10,6 @@ import StepPayment from "./steps/StepPayment";
 import StepLocation from "./steps/StepLocation";
 import StepConfirmation from "./steps/StepConfirmation";
 import { BookingData, DumpsterSizeOption, initialBookingData } from "@/lib/types";
-import { generateConfirmationNumber, saveBooking } from "@/lib/storage";
 import { calculatePrice } from "@/lib/pricing";
 
 export default function BookingFlow() {
@@ -29,34 +28,41 @@ export default function BookingFlow() {
     setStep(2);
   }
 
-  function handleLocationContinue(pin: { lat: number; lng: number }) {
-    const confNum = generateConfirmationNumber();
-    const finalData: BookingData = { ...data, pinLat: pin.lat, pinLng: pin.lng };
+  async function handleLocationContinue(pin: { lat: number; lng: number }) {
+    if (!data.size) throw new Error("No dumpster size selected.");
 
-    setConfirmationNumber(confNum);
-    update({ pinLat: pin.lat, pinLng: pin.lng });
-
-    saveBooking({
-      confirmationNumber: confNum,
-      createdAt: new Date().toISOString(),
-      status: "Pending",
-      size: finalData.size?.label ?? "",
-      price: finalData.price ?? 0,
-      fullName: finalData.fullName,
-      email: finalData.email,
-      phone: finalData.phone,
-      street: finalData.street,
-      city: finalData.city,
-      state: finalData.state,
-      zip: finalData.zip,
-      deliveryDate: finalData.deliveryDate,
-      rentalDays: finalData.rentalDays ?? 0,
-      cardLast4: finalData.cardLast4,
-      cardBrand: finalData.cardBrand,
-      pinLat: pin.lat,
-      pinLng: pin.lng,
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sizeId: data.size.id,
+        deliveryDate: data.deliveryDate,
+        rentalDays: data.rentalDays,
+        price: data.price,
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        street: data.street,
+        city: data.city,
+        state: data.state,
+        zip: data.zip,
+        pinLat: pin.lat,
+        pinLng: pin.lng,
+        cardBrand: data.cardBrand || null,
+        cardLast4: data.cardLast4 || null,
+      }),
     });
 
+    const result = await res.json();
+    if (!res.ok) {
+      // 409 means someone else booked the last unit while this customer was
+      // filling out the form — surface the server's message and let them
+      // retry from Location (or go back and pick a different date/size).
+      throw new Error(result.error || "Something went wrong completing your booking.");
+    }
+
+    setConfirmationNumber(result.confirmationNumber);
+    update({ pinLat: pin.lat, pinLng: pin.lng });
     setStep(6);
   }
 

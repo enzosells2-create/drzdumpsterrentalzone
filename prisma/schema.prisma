@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// A single booked dumpster. One row = one unit of one size reserved for a
+// date range. Availability is enforced in lib/availability.ts by counting
+// overlapping active bookings for a size against DUMPSTER_SIZES[].units
+// (see lib/pricing.ts) — there is no separate inventory table.
+model Booking {
+  id                 String   @id @default(cuid())
+  confirmationNumber String   @unique
+
+  sizeId     String
+  startDate  DateTime
+  endDate    DateTime
+  rentalDays Int
+  price      Float
+
+  // Pending -> just booked, awaiting delivery. Confirmed -> business has
+  // confirmed delivery details. Completed -> rental finished, unit picked
+  // up. Cancelled -> no longer holds the inventory slot.
+  status String @default("Pending")
+
+  fullName String
+  email    String
+  phone    String
+  street   String
+  city     String
+  state    String
+  zip      String
+
+  pinLat Float?
+  pinLng Float?
+
+  cardBrand String?
+  cardLast4 String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sizeId, startDate, endDate])
+}

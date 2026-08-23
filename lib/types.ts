@@ -1,6 +1,8 @@
 export type DumpsterSizeOption = {
   id: string;
   label: string;
+  /** How many physical units of this size the business owns. Caps concurrent bookings. */
+  units: number;
   /** Flat rate for a 1-day rental. */
   oneDayPrice: number;
   /** Flat rate for a 3-day rental. */
