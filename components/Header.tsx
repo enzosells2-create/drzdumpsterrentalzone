@@ -9,7 +9,7 @@ export default function Header() {
             DRZ
           </div>
           <span className="font-heading text-lg font-bold tracking-tight sm:text-xl">
-            {COMPANY.name}
+            Dumpster Rental Zone
           </span>
         </div>
         <div className="hidden text-right sm:block">
