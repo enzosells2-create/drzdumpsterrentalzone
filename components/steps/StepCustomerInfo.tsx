@@ -1,20 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { BookingData } from "@/lib/types";
-import { calculatePrice, RENTAL_DURATION_OPTIONS } from "@/lib/pricing";
+import { ArrowLeft, ArrowRight, CalendarClock, PackageSearch } from "lucide-react";
+import { BookingData, DumpsterSizeOption } from "@/lib/types";
+import { calculatePrice, DUMPSTER_SIZES, RENTAL_DURATION_OPTIONS } from "@/lib/pricing";
 import { formatCurrency, formatPhone, isValidEmail } from "@/lib/format";
 
 type Props = {
   data: BookingData;
   onBack: () => void;
   onContinue: (patch: Partial<BookingData>) => void;
+  onChangeSize: (size: DumpsterSizeOption) => void;
 };
 
 type FieldErrors = Partial<Record<keyof BookingData, string>>;
 
-export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
+type Alternatives = {
+  nextAvailableDate: string | null;
+  alternativeSizes: { sizeId: string; label: string; price: number }[];
+};
+
+export default function StepCustomerInfo({ data, onBack, onContinue, onChangeSize }: Props) {
   const [form, setForm] = useState({
     fullName: data.fullName,
     email: data.email,
@@ -29,6 +35,7 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
+  const [alternatives, setAlternatives] = useState<Alternatives | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -55,6 +62,7 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
     const validation = validate();
     setErrors(validation);
     setAvailabilityError("");
+    setAlternatives(null);
     if (Object.keys(validation).length > 0) return;
     if (!data.size) return;
 
@@ -76,8 +84,12 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
       }
       if (!result.available) {
         setAvailabilityError(
-          `Every ${data.size.label} dumpster is already booked for that time period. Please pick a different delivery date, duration, or size.`
+          `Every ${data.size.label} dumpster is already booked for that time period.`
         );
+        setAlternatives({
+          nextAvailableDate: result.nextAvailableDate ?? null,
+          alternativeSizes: result.alternativeSizes ?? [],
+        });
         return;
       }
     } catch {
@@ -98,6 +110,21 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
       deliveryDate: form.deliveryDate,
       rentalDays: Number(form.rentalDays) as BookingData["rentalDays"],
     });
+  }
+
+  function handleUseNextAvailableDate() {
+    if (!alternatives?.nextAvailableDate) return;
+    set("deliveryDate", alternatives.nextAvailableDate);
+    setAvailabilityError("");
+    setAlternatives(null);
+  }
+
+  function handleSwitchSize(sizeId: string) {
+    const size = DUMPSTER_SIZES.find((s) => s.id === sizeId);
+    if (!size) return;
+    onChangeSize(size);
+    setAvailabilityError("");
+    setAlternatives(null);
   }
 
   const inputClass = (field: keyof FieldErrors) =>
@@ -230,9 +257,46 @@ export default function StepCustomerInfo({ data, onBack, onContinue }: Props) {
       </div>
 
       {availabilityError && (
-        <p className="mt-6 rounded-lg bg-red/10 px-3.5 py-2.5 text-sm font-medium text-red">
-          {availabilityError}
-        </p>
+        <div className="mt-6 rounded-lg border border-red/20 bg-red/5 p-4">
+          <p className="text-sm font-medium text-red">{availabilityError}</p>
+
+          {alternatives && (alternatives.nextAvailableDate || alternatives.alternativeSizes.length > 0) && (
+            <div className="mt-3 space-y-2.5">
+              {alternatives.nextAvailableDate && (
+                <button
+                  type="button"
+                  onClick={handleUseNextAvailableDate}
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-navy/15 bg-white px-3.5 py-2.5 text-left text-sm transition hover:border-navy hover:bg-blue-50/60"
+                >
+                  <CalendarClock className="h-4 w-4 shrink-0 text-navy" />
+                  <span className="text-navy">
+                    Next available {data.size?.label} date:{" "}
+                    <strong className="font-semibold">
+                      {formatDateLabel(alternatives.nextAvailableDate)}
+                    </strong>
+                  </span>
+                  <span className="ml-auto shrink-0 text-xs font-semibold text-red">Use this date</span>
+                </button>
+              )}
+
+              {alternatives.alternativeSizes.map((alt) => (
+                <button
+                  key={alt.sizeId}
+                  type="button"
+                  onClick={() => handleSwitchSize(alt.sizeId)}
+                  className="flex w-full items-center gap-2.5 rounded-lg border border-navy/15 bg-white px-3.5 py-2.5 text-left text-sm transition hover:border-navy hover:bg-blue-50/60"
+                >
+                  <PackageSearch className="h-4 w-4 shrink-0 text-navy" />
+                  <span className="text-navy">
+                    <strong className="font-semibold">{alt.label}</strong> is available for the same
+                    dates — {formatCurrency(alt.price)}
+                  </span>
+                  <span className="ml-auto shrink-0 text-xs font-semibold text-red">Switch size</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <div className="mt-8 flex items-center justify-between">
@@ -273,4 +337,16 @@ function Field({
       {error && <p className="mt-1 text-xs font-medium text-red">{error}</p>}
     </div>
   );
+}
+
+/** "2026-09-15" -> "Tuesday, September 15, 2026". Parsed as UTC noon-ish via
+ * the T00:00:00 suffix so it can't shift a day in either direction depending
+ * on the viewer's local timezone. */
+function formatDateLabel(isoDate: string): string {
+  return new Date(isoDate + "T00:00:00").toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
