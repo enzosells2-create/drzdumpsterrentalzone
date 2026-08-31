@@ -43,6 +43,12 @@ model Booking {
   cardBrand String?
   cardLast4 String?
 
+  // The Stripe PaymentIntent that actually paid for this booking. @unique so
+  // the same successful payment can never be used to create a second
+  // booking (e.g. a resubmitted form). Null only for bookings created before
+  // Stripe was wired up.
+  stripePaymentIntentId String? @unique
+
   // Set together when a valid promo code was applied at checkout; both are
   // null on a booking made without one. discountAmount is recorded (not just
   // recomputed) so past bookings still show what was actually taken off even

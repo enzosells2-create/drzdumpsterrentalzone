@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { computeEndDate } from "@/lib/availability";
-import { calculatePrice, DUMPSTER_SIZES } from "@/lib/pricing";
+import { DUMPSTER_SIZES } from "@/lib/pricing";
 import { isAdminAuthed } from "@/lib/admin-auth";
-import { roundToCents } from "@/lib/promo";
+import { stripe } from "@/lib/stripe-server";
 
 function generateConfirmationNumber(): string {
   const rand = Math.floor(1000 + Math.random() * 9000);
@@ -14,7 +14,6 @@ type CreateBookingBody = {
   sizeId: string;
   deliveryDate: string;
   rentalDays: number;
-  price: number;
   fullName: string;
   email: string;
   phone: string;
@@ -24,9 +23,7 @@ type CreateBookingBody = {
   zip: string;
   pinLat: number | null;
   pinLng: number | null;
-  cardBrand: string | null;
-  cardLast4: string | null;
-  promoCode: string | null;
+  stripePaymentIntentId: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -61,15 +58,51 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Base price is always recomputed server-side from the size + duration —
-  // never trust the client's number for what actually gets charged.
-  const basePrice = calculatePrice(size, body.rentalDays);
+  if (!body.stripePaymentIntentId || typeof body.stripePaymentIntentId !== "string") {
+    return NextResponse.json({ error: "Missing payment confirmation." }, { status: 400 });
+  }
+
+  // The PaymentIntent — not anything the browser sends — is the source of
+  // truth for what was actually charged and for what. We set all of this in
+  // its metadata ourselves when creating/updating it (see
+  // /api/stripe/payment-intent), so once Stripe confirms the charge
+  // succeeded, we trust that metadata rather than recomputing pricing here.
+  let paymentIntent;
+  try {
+    paymentIntent = await stripe.paymentIntents.retrieve(body.stripePaymentIntentId, {
+      expand: ["payment_method"],
+    });
+  } catch (err) {
+    console.error("Failed to retrieve PaymentIntent:", err);
+    return NextResponse.json({ error: "Couldn't verify that payment." }, { status: 400 });
+  }
+
+  if (paymentIntent.status !== "succeeded") {
+    return NextResponse.json({ error: "Payment has not been completed." }, { status: 400 });
+  }
+  if (paymentIntent.metadata.sizeId !== body.sizeId || paymentIntent.metadata.rentalDays !== String(body.rentalDays)) {
+    return NextResponse.json(
+      { error: "This payment doesn't match the requested booking." },
+      { status: 400 }
+    );
+  }
+
+  const finalPrice = Number(paymentIntent.metadata.subtotal); // pre-tax amount stored on the booking, matching existing convention
+  const promoCode = paymentIntent.metadata.promoCode || null;
+  const discountAmount = paymentIntent.metadata.discountAmount
+    ? Number(paymentIntent.metadata.discountAmount)
+    : null;
+
+  const paymentMethod = paymentIntent.payment_method;
+  const card = typeof paymentMethod === "object" && paymentMethod ? paymentMethod.card : undefined;
+  const cardBrand = card?.brand ? card.brand.charAt(0).toUpperCase() + card.brand.slice(1) : null;
+  const cardLast4 = card?.last4 ?? null;
 
   try {
-    // Wrapped in a transaction so the "is a unit free?" check, the promo
-    // code re-check, and the reservation itself all happen atomically — two
-    // customers racing for the last unit (or a code getting deactivated
-    // mid-checkout) can't produce an inconsistent booking.
+    // Wrapped in a transaction so the "is a unit free?" check and the
+    // reservation itself happen atomically — two customers racing for the
+    // last unit can't both succeed. Payment is already verified above, so
+    // this only needs to protect inventory, not re-check pricing.
     const booking = await db.$transaction(async (tx) => {
       const overlapping = await tx.booking.count({
         where: {
@@ -84,28 +117,12 @@ export async function POST(request: NextRequest) {
         throw new Error("SOLD_OUT");
       }
 
-      let promoCode: string | null = null;
-      let discountAmount: number | null = null;
-
-      if (body.promoCode) {
-        const code = body.promoCode.trim().toUpperCase();
-        const promo = await tx.promoCode.findUnique({ where: { code } });
-        const validNow =
-          promo && promo.active && (!promo.expiresAt || promo.expiresAt.getTime() >= Date.now());
-
-        if (!validNow) {
-          throw new Error("PROMO_INVALID");
-        }
-
-        promoCode = promo.code;
-        discountAmount = roundToCents(basePrice * (promo.discountPercent / 100));
-        await tx.promoCode.update({
-          where: { id: promo.id },
-          data: { timesUsed: { increment: 1 } },
-        });
+      if (promoCode) {
+        // Best-effort usage count — doesn't block booking creation even if
+        // the code was since deleted/deactivated, since the customer already
+        // paid the discounted price for it.
+        await tx.promoCode.updateMany({ where: { code: promoCode }, data: { timesUsed: { increment: 1 } } });
       }
-
-      const finalPrice = roundToCents(basePrice - (discountAmount ?? 0));
 
       return tx.booking.create({
         data: {
@@ -124,8 +141,9 @@ export async function POST(request: NextRequest) {
           zip: body.zip,
           pinLat: body.pinLat ?? null,
           pinLng: body.pinLng ?? null,
-          cardBrand: body.cardBrand ?? null,
-          cardLast4: body.cardLast4 ?? null,
+          cardBrand,
+          cardLast4,
+          stripePaymentIntentId: body.stripePaymentIntentId,
           promoCode,
           discountAmount,
         },
@@ -142,15 +160,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "That size is no longer available for the dates you picked — someone else just booked the last unit. Please choose a different date or size.",
+            "That size is no longer available for the dates you picked — someone else just booked the last unit. Please choose a different date or size. Your card was not charged again, but contact us to refund the payment you already made.",
         },
         { status: 409 }
       );
     }
-    if (err instanceof Error && err.message === "PROMO_INVALID") {
+    // Reusing a PaymentIntent for a second booking hits the @unique
+    // constraint on stripePaymentIntentId.
+    if (err && typeof err === "object" && "code" in err && (err as { code?: string }).code === "P2002") {
       return NextResponse.json(
-        { error: "That promo code is no longer valid. Please remove it and try again." },
-        { status: 400 }
+        { error: "This payment has already been used for a booking." },
+        { status: 409 }
       );
     }
     console.error("Failed to create booking:", err);

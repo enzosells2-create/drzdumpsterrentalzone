@@ -23,13 +23,22 @@ export default function BookingFlow() {
 
   function handleSelectSize(size: DumpsterSizeOption) {
     // Price starts as a preview (3-day rate); it's recalculated once the
-    // customer picks a rental duration in the next step.
-    update({ size, price: size.threeDayPrice });
+    // customer picks a rental duration in the next step. Also clears any
+    // prior successful payment — see the comment in Step 2's onContinue.
+    update({
+      size,
+      price: size.threeDayPrice,
+      stripePaymentIntentId: null,
+      cardName: "",
+      cardBrand: "",
+      cardLast4: "",
+    });
     setStep(2);
   }
 
   async function handleLocationContinue(pin: { lat: number; lng: number }) {
     if (!data.size) throw new Error("No dumpster size selected.");
+    if (!data.stripePaymentIntentId) throw new Error("Payment was not completed.");
 
     const res = await fetch("/api/bookings", {
       method: "POST",
@@ -38,7 +47,6 @@ export default function BookingFlow() {
         sizeId: data.size.id,
         deliveryDate: data.deliveryDate,
         rentalDays: data.rentalDays,
-        price: data.price,
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
@@ -48,9 +56,7 @@ export default function BookingFlow() {
         zip: data.zip,
         pinLat: pin.lat,
         pinLng: pin.lng,
-        cardBrand: data.cardBrand || null,
-        cardLast4: data.cardLast4 || null,
-        promoCode: data.promoCode || null,
+        stripePaymentIntentId: data.stripePaymentIntentId,
       }),
     });
 
@@ -94,8 +100,33 @@ export default function BookingFlow() {
               onContinue={(patch) => {
                 const rentalDays = patch.rentalDays ?? data.rentalDays;
                 const price = data.size && rentalDays ? calculatePrice(data.size, rentalDays) : data.price;
-                update({ ...patch, price });
+                // Reaching this step again after a successful payment means
+                // the customer went back and re-confirmed their info — the
+                // price may no longer match what was already charged, so
+                // clear that payment rather than risk reusing a mismatched
+                // (or double-charging a fresh) one. A harmless no-op if they
+                // never got to Payment yet.
+                update({
+                  ...patch,
+                  price,
+                  stripePaymentIntentId: null,
+                  cardName: "",
+                  cardBrand: "",
+                  cardLast4: "",
+                });
                 setStep(3);
+              }}
+              onChangeSize={(size) => {
+                // Same as picking this size on Step 1 — price starts as a
+                // preview and gets recalculated once duration is (re)confirmed.
+                update({
+                  size,
+                  price: size.threeDayPrice,
+                  stripePaymentIntentId: null,
+                  cardName: "",
+                  cardBrand: "",
+                  cardLast4: "",
+                });
               }}
             />
           )}

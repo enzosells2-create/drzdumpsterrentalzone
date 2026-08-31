@@ -37,6 +37,7 @@ export type BookingData = {
   cardName: string;
   cardLast4: string;
   cardBrand: string;
+  stripePaymentIntentId: string | null;
 
   promoCode: string | null;
   discountPercent: number | null;
@@ -67,6 +68,7 @@ export const initialBookingData: BookingData = {
   cardName: "",
   cardLast4: "",
   cardBrand: "",
+  stripePaymentIntentId: null,
 
   promoCode: null,
   discountPercent: null,
