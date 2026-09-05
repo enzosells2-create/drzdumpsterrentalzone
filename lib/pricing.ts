@@ -47,8 +47,8 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   },
   {
     id: "15-yard",
-    label: "15 Yard",
-    units: 9,
+    label: "15 Yard Wheeled Trailer",
+    units: 2,
     oneDayPrice: 300,
     threeDayPrice: 350,
     weeklyPrice: 400,
@@ -68,7 +68,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "20-yard",
     label: "20 Yard",
-    units: 6,
+    units: 9,
     oneDayPrice: 350,
     threeDayPrice: 400,
     weeklyPrice: 450,
