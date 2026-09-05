@@ -48,7 +48,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   {
     id: "15-yard",
     label: "15 Yard",
-    units: 1,
+    units: 9,
     oneDayPrice: 300,
     threeDayPrice: 350,
     weeklyPrice: 400,
