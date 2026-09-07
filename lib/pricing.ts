@@ -139,5 +139,5 @@ export const COMPANY = {
   name: "DRZ Dumpster Rental",
   phone: "(734) 366-4865",
   phoneHref: "tel:+17343664865",
-  serviceArea: "Livingston, Wayne, Oakland, and Macomb Counties, Michigan",
+  serviceArea: "Within 75 miles of South Lyon, Michigan",
 };
