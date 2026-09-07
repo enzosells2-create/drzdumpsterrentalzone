@@ -32,6 +32,11 @@ export default async function AdminPage() {
     cardLast4: b.cardLast4,
     promoCode: b.promoCode,
     discountAmount: b.discountAmount,
+    deliveredAt: b.deliveredAt ? b.deliveredAt.toISOString() : null,
+    pickedUpAt: b.pickedUpAt ? b.pickedUpAt.toISOString() : null,
+    thankYouSentAt: b.thankYouSentAt ? b.thankYouSentAt.toISOString() : null,
+    outstandingBalance: b.outstandingBalance,
+    outstandingNote: b.outstandingNote,
     createdAt: b.createdAt.toISOString(),
   }));
 

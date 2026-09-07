@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MapPin, Phone } from "lucide-react";
 import { BookingData } from "@/lib/types";
 import { COMPANY, getDurationLabel, TAX_RATE } from "@/lib/pricing";
@@ -107,6 +108,12 @@ export default function StepConfirmation({ data, confirmationNumber, onReset }: 
           <Phone className="h-5 w-5" /> {COMPANY.phone}
         </a>
         <p className="mt-1 text-xs text-gray-400">Available 24/7 for support</p>
+        <Link
+          href={`/contact?confirmation=${confirmationNumber}`}
+          className="mt-3 inline-block text-sm font-semibold text-navy underline underline-offset-4 hover:text-red"
+        >
+          Or send us a message
+        </Link>
       </div>
 
       <button

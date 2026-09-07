@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, LogOut, Tag, Trash2 } from "lucide-react";
+import { ArrowLeft, LogOut, MessageSquare, Tag, Trash2 } from "lucide-react";
 import { COMPANY } from "@/lib/pricing";
 
 export type SerializedPromoCode = {
@@ -126,6 +126,12 @@ export default function PromoCodesManager({ initialCodes }: { initialCodes: Seri
               className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
             >
               <ArrowLeft className="h-4 w-4" /> Bookings
+            </Link>
+            <Link
+              href="/admin/messages"
+              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
+            >
+              <MessageSquare className="h-4 w-4" /> Messages
             </Link>
             <button
               onClick={handleLogout}

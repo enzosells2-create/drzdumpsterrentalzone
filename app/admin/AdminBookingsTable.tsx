@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, MapPin, Phone, Tag, Trash2 } from "lucide-react";
+import { CheckCircle2, LogOut, MapPin, MessageSquare, Package, Phone, PhoneCall, Tag, Trash2, Truck } from "lucide-react";
 import { COMPANY } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 import { DumpsterSizeOption } from "@/lib/types";
@@ -30,6 +30,11 @@ export type SerializedBooking = {
   cardLast4: string | null;
   promoCode: string | null;
   discountAmount: number | null;
+  deliveredAt: string | null;
+  pickedUpAt: string | null;
+  thankYouSentAt: string | null;
+  outstandingBalance: number;
+  outstandingNote: string | null;
   createdAt: string;
 };
 
@@ -65,6 +70,10 @@ export default function AdminBookingsTable({
   const router = useRouter();
   const [bookings, setBookings] = useState(initialBookings);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [stageUpdatingId, setStageUpdatingId] = useState<string | null>(null);
+  const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
+  const [balanceDraft, setBalanceDraft] = useState({ amount: "", note: "" });
+  const [savingBalance, setSavingBalance] = useState(false);
 
   const grouped = useMemo(() => {
     return sizes.map((size) => ({
@@ -94,6 +103,64 @@ export default function AdminBookingsTable({
     }
   }
 
+  async function handleStageUpdate(id: string, stage: "delivered" | "pickedUp" | "thankYou") {
+    setStageUpdatingId(id);
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}/stage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Update failed");
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                deliveredAt: result.booking.deliveredAt,
+                pickedUpAt: result.booking.pickedUpAt,
+                thankYouSentAt: result.booking.thankYouSentAt,
+              }
+            : b
+        )
+      );
+    } catch {
+      alert("Couldn't send that notification. Please try again.");
+    } finally {
+      setStageUpdatingId(null);
+    }
+  }
+
+  function startEditingBalance(b: SerializedBooking) {
+    setEditingBalanceId(b.id);
+    setBalanceDraft({ amount: b.outstandingBalance ? String(b.outstandingBalance) : "", note: b.outstandingNote ?? "" });
+  }
+
+  async function saveBalance(id: string) {
+    const amount = Number(balanceDraft.amount) || 0;
+    setSavingBalance(true);
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}/balance`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outstandingBalance: amount, outstandingNote: balanceDraft.note }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Update failed");
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === id ? { ...b, outstandingBalance: result.booking.outstandingBalance, outstandingNote: result.booking.outstandingNote } : b
+        )
+      );
+      setEditingBalanceId(null);
+    } catch {
+      alert("Couldn't save that balance. Please try again.");
+    } finally {
+      setSavingBalance(false);
+    }
+  }
+
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST" });
     router.push("/admin/login");
@@ -114,6 +181,12 @@ export default function AdminBookingsTable({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/admin/messages"
+              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
+            >
+              <MessageSquare className="h-4 w-4" /> Messages
+            </Link>
             <Link
               href="/admin/promo-codes"
               className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
@@ -158,7 +231,7 @@ export default function AdminBookingsTable({
                   <p className="px-5 py-6 text-sm text-gray-400">No bookings for this size yet.</p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px] text-left text-sm">
+                    <table className="w-full min-w-[980px] text-left text-sm">
                       <thead>
                         <tr className="text-xs uppercase tracking-wide text-gray-400">
                           <th className="px-5 py-2.5 font-semibold">Confirmation</th>
@@ -166,6 +239,8 @@ export default function AdminBookingsTable({
                           <th className="px-5 py-2.5 font-semibold">Dates</th>
                           <th className="px-5 py-2.5 font-semibold">Price</th>
                           <th className="px-5 py-2.5 font-semibold">Status</th>
+                          <th className="px-5 py-2.5 font-semibold">Delivery</th>
+                          <th className="px-5 py-2.5 font-semibold">Balance</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -211,6 +286,85 @@ export default function AdminBookingsTable({
                                 ))}
                               </select>
                             </td>
+                            <td className="px-5 py-3">
+                              <div className="flex flex-col gap-1">
+                                <StageButton
+                                  label="Delivered"
+                                  icon={<Truck className="h-3 w-3" />}
+                                  sentAt={b.deliveredAt}
+                                  disabled={stageUpdatingId === b.id}
+                                  onClick={() => handleStageUpdate(b.id, "delivered")}
+                                />
+                                <StageButton
+                                  label="Picked Up"
+                                  icon={<Package className="h-3 w-3" />}
+                                  sentAt={b.pickedUpAt}
+                                  disabled={stageUpdatingId === b.id}
+                                  onClick={() => handleStageUpdate(b.id, "pickedUp")}
+                                />
+                                <StageButton
+                                  label="Thank You"
+                                  icon={<PhoneCall className="h-3 w-3" />}
+                                  sentAt={b.thankYouSentAt}
+                                  disabled={stageUpdatingId === b.id}
+                                  onClick={() => handleStageUpdate(b.id, "thankYou")}
+                                />
+                              </div>
+                            </td>
+                            <td className="px-5 py-3">
+                              {editingBalanceId === b.id ? (
+                                <div className="w-40 space-y-1.5">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    autoFocus
+                                    value={balanceDraft.amount}
+                                    onChange={(e) => setBalanceDraft((d) => ({ ...d, amount: e.target.value }))}
+                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-navy-light"
+                                    placeholder="0.00"
+                                  />
+                                  <input
+                                    value={balanceDraft.note}
+                                    onChange={(e) => setBalanceDraft((d) => ({ ...d, note: e.target.value }))}
+                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-navy-light"
+                                    placeholder="Note (optional)"
+                                  />
+                                  <div className="flex gap-1.5">
+                                    <button
+                                      onClick={() => saveBalance(b.id)}
+                                      disabled={savingBalance}
+                                      className="rounded bg-navy px-2 py-1 text-[11px] font-semibold text-white disabled:opacity-50"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingBalanceId(null)}
+                                      className="rounded px-2 py-1 text-[11px] font-semibold text-gray-500 hover:bg-gray-100"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => startEditingBalance(b)}
+                                  className="text-left"
+                                  title="Click to edit"
+                                >
+                                  <span
+                                    className={`text-sm font-semibold ${
+                                      b.outstandingBalance > 0 ? "text-red" : "text-gray-400"
+                                    }`}
+                                  >
+                                    {b.outstandingBalance > 0 ? formatCurrency(b.outstandingBalance) : "—"}
+                                  </span>
+                                  {b.outstandingNote && (
+                                    <p className="text-xs text-gray-400">{b.outstandingNote}</p>
+                                  )}
+                                </button>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -223,5 +377,39 @@ export default function AdminBookingsTable({
         </div>
       </main>
     </div>
+  );
+}
+
+function StageButton({
+  label,
+  icon,
+  sentAt,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  sentAt: string | null;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  if (sentAt) {
+    return (
+      <span
+        className="flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-[11px] font-semibold text-green-700 ring-1 ring-green-200"
+        title={new Date(sentAt).toLocaleString()}
+      >
+        <CheckCircle2 className="h-3 w-3" /> {label}
+      </span>
+    );
+  }
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-500 ring-1 ring-gray-200 transition hover:bg-navy hover:text-white disabled:opacity-50"
+    >
+      {icon} {label}
+    </button>
   );
 }

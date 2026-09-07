@@ -4,6 +4,7 @@ import { computeEndDate } from "@/lib/availability";
 import { DUMPSTER_SIZES } from "@/lib/pricing";
 import { isAdminAuthed } from "@/lib/admin-auth";
 import { stripe } from "@/lib/stripe-server";
+import { newBookingOwnerEmail, OWNER_EMAIL, sendEmail } from "@/lib/email";
 
 function generateConfirmationNumber(): string {
   const rand = Math.floor(1000 + Math.random() * 9000);
@@ -149,6 +150,18 @@ export async function POST(request: NextRequest) {
         },
       });
     });
+
+    // Best-effort — the booking is already created either way.
+    const notice = newBookingOwnerEmail({
+      confirmationNumber: booking.confirmationNumber,
+      sizeLabel: size.label,
+      customerName: booking.fullName,
+      phone: booking.phone,
+      address: `${booking.street}, ${booking.city}, ${booking.state} ${booking.zip}`,
+      deliveryDate: booking.startDate.toISOString().split("T")[0],
+      price: booking.price,
+    });
+    await sendEmail({ to: OWNER_EMAIL, ...notice });
 
     return NextResponse.json({
       confirmationNumber: booking.confirmationNumber,

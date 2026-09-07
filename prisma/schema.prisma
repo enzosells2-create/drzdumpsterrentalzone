@@ -56,10 +56,41 @@ model Booking {
   promoCode      String?
   discountAmount Float?
 
+  // Delivery lifecycle, set by the admin from the bookings dashboard. Each
+  // timestamp doubles as "has this stage's notification email been sent" —
+  // non-null means yes. Independent of `status` above (which is the
+  // booking's administrative state, not the physical dumpster's).
+  deliveredAt    DateTime?
+  pickedUpAt     DateTime?
+  thankYouSentAt DateTime?
+
+  // Money owed beyond what was already charged at checkout — e.g. overage
+  // fees (extra tons, extra days, tires) discovered at pickup. Tracked and
+  // marked paid manually by the admin; not tied to another Stripe charge.
+  outstandingBalance Float   @default(0)
+  outstandingNote    String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([sizeId, startDate, endDate])
+}
+
+// A question/message submitted through the public "Contact Us" form.
+// Optionally references a booking's confirmation number so the owner knows
+// which order it's about.
+model ContactMessage {
+  id                 String   @id @default(cuid())
+  name               String
+  email              String
+  phone              String?
+  confirmationNumber String?
+  message            String
+
+  // New -> just submitted. Read -> owner has seen it. Resolved -> handled.
+  status String @default("New")
+
+  createdAt DateTime @default(now())
 }
 
 // A discount code the owner posts on social media. Meant to be short-lived —
