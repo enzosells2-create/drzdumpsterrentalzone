@@ -32,7 +32,7 @@ export function computeEndDate(startDate: Date, rentalDays: number): Date {
 
 /**
  * How many units of `sizeId` are already reserved over [startDate, endDate)
- * — counting both residential Bookings AND commercial accounts, since they
+ * — counting both residential Bookings AND commercial orders, since they
  * draw from the same physical inventory pool (see lib/commercial.ts).
  */
 export async function countOverlapping(
@@ -51,10 +51,10 @@ export async function countOverlapping(
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
       },
     }),
-    db.commercialAccount.count({
+    db.commercialOrder.count({
       where: {
         sizeId,
-        status: "Active",
+        status: { in: [...ACTIVE_STATUSES] },
         startDate: { lt: endDate },
         endDate: { gt: startDate },
       },
@@ -98,7 +98,7 @@ export async function findNextAvailableDate(
   if (!size) return null;
 
   const searchWindowEnd = addDaysUTC(fromDate, maxDaysToSearch + rentalDays);
-  const [bookings, commercialAccounts] = await Promise.all([
+  const [bookings, commercialOrders] = await Promise.all([
     db.booking.findMany({
       where: {
         sizeId,
@@ -108,17 +108,17 @@ export async function findNextAvailableDate(
       },
       select: { startDate: true, endDate: true },
     }),
-    db.commercialAccount.findMany({
+    db.commercialOrder.findMany({
       where: {
         sizeId,
-        status: "Active",
+        status: { in: [...ACTIVE_STATUSES] },
         startDate: { lt: searchWindowEnd },
         endDate: { gt: fromDate },
       },
       select: { startDate: true, endDate: true },
     }),
   ]);
-  const reserved = [...bookings, ...commercialAccounts];
+  const reserved = [...bookings, ...commercialOrders];
 
   for (let offset = 0; offset <= maxDaysToSearch; offset++) {
     const candidateStart = addDaysUTC(fromDate, offset);

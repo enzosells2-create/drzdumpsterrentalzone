@@ -1,14 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { CheckCircle2, FileText } from "lucide-react";
-import {
-  COMMERCIAL_CREDIT_TERMS,
-  COMMERCIAL_MONTHLY_DISCOUNT,
-  COMMERCIAL_TERM_OPTIONS,
-  calculateCommercialMonthlyRate,
-} from "@/lib/commercial";
-import { COMPANY, DUMPSTER_SIZES, OVERAGE_FEES, PROHIBITED_ITEMS } from "@/lib/pricing";
+import { COMMERCIAL_CREDIT_TERMS, COMMERCIAL_DISCOUNT, COMMERCIAL_MIN_ORDERS_PER_MONTH } from "@/lib/commercial";
+import { COMPANY, OVERAGE_FEES, PROHIBITED_ITEMS } from "@/lib/pricing";
 import { formatCurrency, formatPhone, isValidEmail } from "@/lib/format";
 
 type FormState = {
@@ -20,9 +16,6 @@ type FormState = {
   city: string;
   state: string;
   zip: string;
-  sizeId: string;
-  termMonths: number | "";
-  startDate: string;
   signature: string;
   agreedTerms: boolean;
 };
@@ -36,9 +29,6 @@ const initialForm: FormState = {
   city: "",
   state: "MI",
   zip: "",
-  sizeId: "",
-  termMonths: "",
-  startDate: "",
   signature: "",
   agreedTerms: false,
 };
@@ -50,19 +40,11 @@ export default function CommercialForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [result, setResult] = useState<{ confirmationNumber: string; monthlyRate: number; termMonths: number } | null>(
-    null
-  );
-
-  const today = new Date().toISOString().split("T")[0];
+  const [accountNumber, setAccountNumber] = useState<string | null>(null);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
-
-  const selectedSize = DUMPSTER_SIZES.find((s) => s.id === form.sizeId) ?? null;
-  const monthlyRate = selectedSize ? calculateCommercialMonthlyRate(selectedSize) : null;
-  const standardRate = selectedSize ? selectedSize.weeklyPrice * 4 : null;
 
   function validate(): FieldErrors {
     const next: FieldErrors = {};
@@ -74,9 +56,6 @@ export default function CommercialForm() {
     if (!form.street.trim()) next.street = "Street address is required.";
     if (!form.city.trim()) next.city = "City is required.";
     if (!/^\d{5}$/.test(form.zip.trim())) next.zip = "Enter a valid 5-digit ZIP code.";
-    if (!form.sizeId) next.sizeId = "Select a dumpster size.";
-    if (!form.termMonths) next.termMonths = "Select a contract term.";
-    if (!form.startDate) next.startDate = "Start date is required.";
     if (form.signature.trim().length < 2) next.signature = "Signature is required.";
     if (!form.agreedTerms) next.agreedTerms = "You must agree to the commercial terms.";
     return next;
@@ -103,9 +82,6 @@ export default function CommercialForm() {
           city: form.city.trim(),
           state: form.state.trim(),
           zip: form.zip.trim(),
-          sizeId: form.sizeId,
-          termMonths: Number(form.termMonths),
-          startDate: form.startDate,
           signature: form.signature.trim(),
         }),
       });
@@ -114,7 +90,7 @@ export default function CommercialForm() {
         setSubmitError(data.error || "Something went wrong. Please try again.");
         return;
       }
-      setResult(data);
+      setAccountNumber(data.accountNumber);
     } catch {
       setSubmitError("Couldn't reach the server — check your connection and try again.");
     } finally {
@@ -127,20 +103,26 @@ export default function CommercialForm() {
       errors[field] ? "border-red" : "border-gray-200"
     }`;
 
-  if (result) {
+  if (accountNumber) {
     return (
       <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-6">
         <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-green-600" />
         <div>
           <p className="font-semibold text-green-800">Commercial account created!</p>
-          <div className="mt-2 space-y-1 text-sm text-green-700">
-            <p>Confirmation #: <span className="font-mono font-semibold">{result.confirmationNumber}</span></p>
-            <p>Monthly rate: <span className="font-semibold">{formatCurrency(result.monthlyRate)}</span></p>
-            <p>Term: <span className="font-semibold">{result.termMonths} months</span></p>
-          </div>
-          <p className="mt-3 text-sm text-green-700">
-            We'll be in touch to schedule delivery. You'll be invoiced monthly — no card charge today.
+          <p className="mt-2 text-sm text-green-700">
+            Your account number:{" "}
+            <span className="font-mono font-semibold">{accountNumber}</span>
           </p>
+          <p className="mt-1 text-sm text-green-700">
+            Save this number — you'll need it every time you place an order. You're all set to start
+            ordering dumpsters at your discounted rate.
+          </p>
+          <Link
+            href="/commercial/order"
+            className="mt-4 inline-block rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light"
+          >
+            Place Your First Order
+          </Link>
         </div>
       </div>
     );
@@ -222,85 +204,38 @@ export default function CommercialForm() {
       </div>
 
       <div className="space-y-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-        <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-navy">Service Details</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Dumpster Size" error={errors.sizeId}>
-            <select className={inputClass("sizeId")} value={form.sizeId} onChange={(e) => set("sizeId", e.target.value)}>
-              <option value="" disabled>
-                Select size
-              </option>
-              {DUMPSTER_SIZES.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label} — {formatCurrency(calculateCommercialMonthlyRate(s))}/mo
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Contract Term" error={errors.termMonths}>
-            <select
-              className={inputClass("termMonths")}
-              value={form.termMonths}
-              onChange={(e) => set("termMonths", Number(e.target.value))}
-            >
-              <option value="" disabled>
-                Select term
-              </option>
-              {COMMERCIAL_TERM_OPTIONS.map((o) => (
-                <option key={o.months} value={o.months}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Start Date" error={errors.startDate} className="sm:col-span-2">
-            <input
-              type="date"
-              min={today}
-              className={inputClass("startDate")}
-              value={form.startDate}
-              onChange={(e) => set("startDate", e.target.value)}
-            />
-          </Field>
-        </div>
-
-        {selectedSize && monthlyRate !== null && (
-          <div className="rounded-lg border-l-4 border-red bg-blue-50/60 p-4">
-            <p className="text-sm text-gray-600">
-              Standard monthly rate: <span className="line-through">{formatCurrency(standardRate!)}</span>
-            </p>
-            <p className="font-heading text-xl font-extrabold text-red">
-              {formatCurrency(monthlyRate)}
-              <span className="text-sm font-medium text-gray-500"> /month</span>
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              ${COMMERCIAL_MONTHLY_DISCOUNT} off our standard rate, billed monthly for the full term.
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
         <div className="flex items-center gap-2 border-b-2 border-red pb-4">
           <FileText className="h-5 w-5 text-red" />
           <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-navy">
-            Commercial Rental Agreement
+            Commercial Account Agreement
           </h2>
         </div>
 
         <div className="space-y-3 rounded-md bg-gray-50 p-3.5 text-sm leading-relaxed text-gray-600">
           <p>
-            <strong className="text-navy">Minimum Term.</strong> This agreement requires a minimum
-            commitment of 3 months. Early termination before the end of the selected term may result in
-            a final invoice for the remaining committed months.
+            <strong className="text-navy">Discounted Rate.</strong> Once this account is active, the
+            business may place individual dumpster orders (any size, any date) at{" "}
+            {formatCurrency(COMMERCIAL_DISCOUNT)} off the standard residential rate for each order.
           </p>
           <p>
-            <strong className="text-navy">Billing &amp; Credit Terms.</strong> Customer will be invoiced
-            monthly for the Monthly Rate shown above. {COMMERCIAL_CREDIT_TERMS} No payment is collected
-            at signup.
+            <strong className="text-navy">Minimum Monthly Volume.</strong> This discounted rate is
+            contingent on the business placing at least {COMMERCIAL_MIN_ORDERS_PER_MONTH} dumpster
+            orders per calendar month. For any month where fewer than{" "}
+            {COMMERCIAL_MIN_ORDERS_PER_MONTH} orders are placed, {COMPANY.name} may bill the difference
+            up to the full standard residential rate for each order placed that month.
           </p>
           <p>
-            <strong className="text-navy">Included.</strong> {"2"} tons of weight included per pickup
-            cycle. Delivery to and pickup from the address provided above.
+            <strong className="text-navy">Billing &amp; Credit Terms.</strong> No payment is collected
+            online. {COMMERCIAL_CREDIT_TERMS}
+          </p>
+          <p>
+            <strong className="text-navy">Term.</strong> This is an ongoing agreement with no fixed end
+            date. Either party may cancel at any time; cancellation does not affect amounts already
+            owed for orders already placed.
+          </p>
+          <p>
+            <strong className="text-navy">Included Per Order.</strong> 2 tons of weight included.
+            Delivery to and pickup from the address provided at the time of each order.
           </p>
           <p>
             <strong className="text-navy">Prohibited Items.</strong> {PROHIBITED_ITEMS.join(", ")}.
@@ -313,10 +248,10 @@ export default function CommercialForm() {
             each.
           </p>
           <p>
-            <strong className="text-navy">Liability.</strong> Customer is responsible for the dumpster(s)
-            while on their property, including protecting against damage, vandalism, or unauthorized use.{" "}
-            {COMPANY.name} is not responsible for damage to driveways, lawns, or landscaping caused by
-            normal delivery and pickup operations.
+            <strong className="text-navy">Liability.</strong> Customer is responsible for each dumpster
+            while on their property, including protecting against damage, vandalism, or unauthorized
+            use. {COMPANY.name} is not responsible for damage to driveways, lawns, or landscaping caused
+            by normal delivery and pickup operations.
           </p>
         </div>
 
@@ -338,8 +273,8 @@ export default function CommercialForm() {
             checked={form.agreedTerms}
             onChange={(e) => set("agreedTerms", e.target.checked)}
           />
-          I am authorized to sign on behalf of the business above, and I agree to the minimum term,
-          billing, and credit terms of this commercial rental agreement.
+          I am authorized to sign on behalf of the business above, and I agree to the minimum monthly
+          volume, billing, and credit terms of this commercial account agreement.
         </label>
         {errors.agreedTerms && <p className="-mt-2 text-xs font-medium text-red">{errors.agreedTerms}</p>}
       </div>
@@ -355,6 +290,13 @@ export default function CommercialForm() {
       >
         {submitting ? "Submitting…" : "Sign & Create Commercial Account"}
       </button>
+
+      <p className="text-center text-sm text-gray-500">
+        Already have a commercial account?{" "}
+        <Link href="/commercial/order" className="font-semibold text-navy underline underline-offset-4 hover:text-red">
+          Place an order
+        </Link>
+      </p>
     </form>
   );
 }

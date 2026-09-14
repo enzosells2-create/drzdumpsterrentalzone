@@ -7,16 +7,14 @@ export default async function AdminCommercialPage() {
   const authed = await isAdminAuthed();
   if (!authed) redirect("/admin/login");
 
-  const accounts = await db.commercialAccount.findMany({ orderBy: { startDate: "asc" } });
+  const accounts = await db.commercialAccount.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { orders: { orderBy: { startDate: "desc" } } },
+  });
 
   const serialized = accounts.map((a) => ({
     id: a.id,
-    confirmationNumber: a.confirmationNumber,
-    sizeId: a.sizeId,
-    startDate: a.startDate.toISOString(),
-    endDate: a.endDate.toISOString(),
-    termMonths: a.termMonths,
-    monthlyRate: a.monthlyRate,
+    accountNumber: a.accountNumber,
     status: a.status,
     businessName: a.businessName,
     contactName: a.contactName,
@@ -26,7 +24,25 @@ export default async function AdminCommercialPage() {
     city: a.city,
     state: a.state,
     zip: a.zip,
+    agreedAt: a.agreedAt.toISOString(),
     createdAt: a.createdAt.toISOString(),
+    orders: a.orders.map((o) => ({
+      id: o.id,
+      confirmationNumber: o.confirmationNumber,
+      sizeId: o.sizeId,
+      startDate: o.startDate.toISOString(),
+      endDate: o.endDate.toISOString(),
+      rentalDays: o.rentalDays,
+      price: o.price,
+      status: o.status,
+      street: o.street,
+      city: o.city,
+      state: o.state,
+      zip: o.zip,
+      outstandingBalance: o.outstandingBalance,
+      outstandingNote: o.outstandingNote,
+      createdAt: o.createdAt.toISOString(),
+    })),
   }));
 
   return <AdminCommercialTable initialAccounts={serialized} />;

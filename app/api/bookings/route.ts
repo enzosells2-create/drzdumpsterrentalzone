@@ -105,9 +105,9 @@ export async function POST(request: NextRequest) {
     // last unit can't both succeed. Payment is already verified above, so
     // this only needs to protect inventory, not re-check pricing.
     const booking = await db.$transaction(async (tx) => {
-      // Counts against the same shared inventory pool as commercial
-      // accounts (see lib/commercial.ts) — a unit out on a commercial
-      // contract can't also be booked residentially.
+      // Counts against the same shared inventory pool as commercial orders
+      // (see lib/commercial.ts) — a unit out on a commercial order can't
+      // also be booked residentially.
       const [residentialCount, commercialCount] = await Promise.all([
         tx.booking.count({
           where: {
@@ -117,10 +117,10 @@ export async function POST(request: NextRequest) {
             endDate: { gt: startDate },
           },
         }),
-        tx.commercialAccount.count({
+        tx.commercialOrder.count({
           where: {
             sizeId: size.id,
-            status: "Active",
+            status: { in: ["Pending", "Confirmed"] },
             startDate: { lt: endDate },
             endDate: { gt: startDate },
           },

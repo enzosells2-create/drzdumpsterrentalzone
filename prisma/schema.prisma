@@ -76,23 +76,19 @@ model Booking {
   @@index([sizeId, startDate, endDate])
 }
 
-// A commercial account — completely separate from residential Booking:
-// businesses get a discounted monthly rate, commit to a minimum term, and
-// are billed monthly on credit (Net 30) rather than paying upfront through
-// Stripe. Still counted against the SAME DUMPSTER_SIZES inventory pool as
-// residential bookings (see lib/availability.ts), so a commercial unit on
-// contract can't also be double-booked residentially.
+// A commercial account — the ONGOING AGREEMENT itself, not a reservation.
+// No size, dates, or rate live here; a business signs up once (contract +
+// Net 30 credit terms), then places individual CommercialOrders under this
+// account over time, each at $50 off the residential rate. The deal is
+// contingent on averaging 3+ orders per month — the site doesn't enforce
+// that automatically; the owner reviews order counts per account in admin
+// and manually charges the price difference (via a CommercialOrder's
+// outstandingBalance) for any month that falls short.
 model CommercialAccount {
-  id                 String   @id @default(cuid())
-  confirmationNumber String   @unique
+  id            String   @id @default(cuid())
+  accountNumber String   @unique
 
-  sizeId      String
-  startDate   DateTime
-  endDate     DateTime
-  termMonths  Int
-  monthlyRate Float
-
-  // Active -> currently on contract. Cancelled -> no longer holds the slot.
+  // Active -> can place orders. Cancelled -> no longer a commercial account.
   status String @default("Active")
 
   businessName String
@@ -107,10 +103,49 @@ model CommercialAccount {
   signature String
   agreedAt  DateTime @default(now())
 
+  orders CommercialOrder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// A single dumpster order placed under a CommercialAccount — the commercial
+// equivalent of residential's Booking. Counted against the SAME
+// DUMPSTER_SIZES inventory pool as residential (see lib/availability.ts), so
+// a unit out on a commercial order can't also be double-booked
+// residentially. No Stripe payment — billed on credit (Net 30) outside the
+// site; outstandingBalance also doubles as where the owner records the
+// "didn't hit 3 orders this month" full-price penalty.
+model CommercialOrder {
+  id                 String   @id @default(cuid())
+  confirmationNumber String   @unique
+
+  commercialAccountId String
+  commercialAccount   CommercialAccount @relation(fields: [commercialAccountId], references: [id])
+
+  sizeId     String
+  startDate  DateTime
+  endDate    DateTime
+  rentalDays Int
+  price      Float
+
+  // Pending -> just ordered. Confirmed -> delivery details confirmed.
+  // Completed -> picked up. Cancelled -> no longer holds the slot.
+  status String @default("Pending")
+
+  street String
+  city   String
+  state  String
+  zip    String
+
+  outstandingBalance Float   @default(0)
+  outstandingNote    String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([sizeId, startDate, endDate])
+  @@index([commercialAccountId, startDate])
 }
 
 // A question/message submitted through the public "Contact Us" form.
