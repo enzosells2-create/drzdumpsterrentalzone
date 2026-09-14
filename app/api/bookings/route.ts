@@ -105,14 +105,28 @@ export async function POST(request: NextRequest) {
     // last unit can't both succeed. Payment is already verified above, so
     // this only needs to protect inventory, not re-check pricing.
     const booking = await db.$transaction(async (tx) => {
-      const overlapping = await tx.booking.count({
-        where: {
-          sizeId: size.id,
-          status: { in: ["Pending", "Confirmed"] },
-          startDate: { lt: endDate },
-          endDate: { gt: startDate },
-        },
-      });
+      // Counts against the same shared inventory pool as commercial
+      // accounts (see lib/commercial.ts) — a unit out on a commercial
+      // contract can't also be booked residentially.
+      const [residentialCount, commercialCount] = await Promise.all([
+        tx.booking.count({
+          where: {
+            sizeId: size.id,
+            status: { in: ["Pending", "Confirmed"] },
+            startDate: { lt: endDate },
+            endDate: { gt: startDate },
+          },
+        }),
+        tx.commercialAccount.count({
+          where: {
+            sizeId: size.id,
+            status: "Active",
+            startDate: { lt: endDate },
+            endDate: { gt: startDate },
+          },
+        }),
+      ]);
+      const overlapping = residentialCount + commercialCount;
 
       if (overlapping >= size.units) {
         throw new Error("SOLD_OUT");

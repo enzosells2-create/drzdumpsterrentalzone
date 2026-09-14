@@ -14,6 +14,9 @@ export default function Header() {
           </span>
         </Link>
         <div className="hidden items-center gap-6 text-right sm:flex">
+          <Link href="/commercial" className="text-sm font-semibold text-white/90 hover:text-white">
+            Commercial
+          </Link>
           <Link href="/contact" className="text-sm font-semibold text-white/90 hover:text-white">
             Contact Us
           </Link>

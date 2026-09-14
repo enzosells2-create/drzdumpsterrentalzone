@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, LogOut, Mail, MessageSquare, Phone, Tag } from "lucide-react";
+import { ArrowLeft, Briefcase, LogOut, Mail, MessageSquare, Phone, Tag } from "lucide-react";
 import { COMPANY } from "@/lib/pricing";
 
 export type SerializedMessage = {
@@ -86,6 +86,12 @@ export default function AdminMessages({ initialMessages }: { initialMessages: Se
               className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
             >
               <ArrowLeft className="h-4 w-4" /> Bookings
+            </Link>
+            <Link
+              href="/admin/commercial"
+              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
+            >
+              <Briefcase className="h-4 w-4" /> Commercial
             </Link>
             <Link
               href="/admin/promo-codes"

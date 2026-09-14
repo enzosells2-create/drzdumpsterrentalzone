@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, LogOut, MapPin, MessageSquare, Package, Phone, PhoneCall, Tag, Trash2, Truck } from "lucide-react";
+import { Briefcase, CheckCircle2, LogOut, MapPin, MessageSquare, Package, Phone, PhoneCall, Tag, Trash2, Truck } from "lucide-react";
 import { COMPANY } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 import { DumpsterSizeOption } from "@/lib/types";
@@ -181,6 +181,12 @@ export default function AdminBookingsTable({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/admin/commercial"
+              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
+            >
+              <Briefcase className="h-4 w-4" /> Commercial
+            </Link>
             <Link
               href="/admin/messages"
               className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
