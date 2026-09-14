@@ -4,6 +4,7 @@ import { computeEndDate } from "@/lib/availability";
 import { DUMPSTER_SIZES } from "@/lib/pricing";
 import { calculateCommercialPrice } from "@/lib/commercial";
 import { isAdminAuthed } from "@/lib/admin-auth";
+import { newCommercialOrderOwnerEmail, notifyOwner } from "@/lib/email";
 
 function generateConfirmationNumber(): string {
   const rand = Math.floor(1000 + Math.random() * 9000);
@@ -100,6 +101,21 @@ export async function POST(request: NextRequest) {
         },
       });
     });
+
+    // Best-effort — the order is already created either way.
+    const notice = newCommercialOrderOwnerEmail({
+      confirmationNumber: order.confirmationNumber,
+      sizeLabel: size.label,
+      businessName: account.businessName,
+      accountNumber: account.accountNumber,
+      address: `${order.street}, ${order.city}, ${order.state} ${order.zip}`,
+      deliveryDate: order.startDate.toISOString().split("T")[0],
+      price: order.price,
+    });
+    await notifyOwner(
+      notice,
+      `New DRZ commercial order: ${size.label} - ${account.businessName} - $${order.price.toFixed(2)} - delivers ${order.startDate.toISOString().split("T")[0]}`
+    );
 
     return NextResponse.json({ confirmationNumber: order.confirmationNumber, price: order.price });
   } catch (err) {

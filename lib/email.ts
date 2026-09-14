@@ -13,6 +13,11 @@ const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || "DRZ Dumpster Rental <onbo
 // Where the owner's own alerts (new booking, new contact message) go.
 export const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || "drzdumpsterrentalzone@gmail.com";
 
+// Optional phone-carrier email-to-text gateway (e.g. 5551234567@vtext.com).
+// When set, new-order alerts are also sent here as a plain-text message,
+// which the carrier delivers as a real text. Unset = texting is skipped.
+const OWNER_SMS_EMAIL = process.env.OWNER_SMS_EMAIL || null;
+
 type SendEmailInput = {
   to: string;
   subject: string;
@@ -41,6 +46,19 @@ export async function sendEmail({ to, subject, html }: SendEmailInput): Promise<
     console.error("Failed to send email:", err);
     return false;
   }
+}
+
+/**
+ * Sends the owner's full HTML email alert and, if OWNER_SMS_EMAIL is set,
+ * a short plain-text version to the carrier email-to-text gateway so it
+ * arrives as a real text. Both are best-effort and run in parallel.
+ */
+export async function notifyOwner(emailNotice: { subject: string; html: string }, smsText: string): Promise<void> {
+  const sends = [sendEmail({ to: OWNER_EMAIL, ...emailNotice })];
+  if (OWNER_SMS_EMAIL) {
+    sends.push(sendEmail({ to: OWNER_SMS_EMAIL, subject: "", html: smsText }));
+  }
+  await Promise.all(sends);
 }
 
 function wrapper(bodyHtml: string): string {
@@ -112,6 +130,52 @@ export function newBookingOwnerEmail(details: {
         <li><strong>Address:</strong> ${details.address}</li>
         <li><strong>Delivery date:</strong> ${details.deliveryDate}</li>
         <li><strong>Price:</strong> $${details.price.toFixed(2)}</li>
+      </ul>
+    `),
+  };
+}
+
+export function newCommercialOrderOwnerEmail(details: {
+  confirmationNumber: string;
+  sizeLabel: string;
+  businessName: string;
+  accountNumber: string;
+  address: string;
+  deliveryDate: string;
+  price: number;
+}): { subject: string; html: string } {
+  return {
+    subject: `New commercial order: ${details.sizeLabel} — ${details.businessName}`,
+    html: wrapper(`
+      <p>New commercial order received:</p>
+      <ul>
+        <li><strong>Confirmation:</strong> ${details.confirmationNumber}</li>
+        <li><strong>Size:</strong> ${details.sizeLabel}</li>
+        <li><strong>Business:</strong> ${details.businessName} (${details.accountNumber})</li>
+        <li><strong>Address:</strong> ${details.address}</li>
+        <li><strong>Delivery date:</strong> ${details.deliveryDate}</li>
+        <li><strong>Price:</strong> $${details.price.toFixed(2)}</li>
+      </ul>
+    `),
+  };
+}
+
+export function newCommercialAccountOwnerEmail(details: {
+  accountNumber: string;
+  businessName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `New commercial account: ${details.businessName}`,
+    html: wrapper(`
+      <p>A new commercial account was signed up:</p>
+      <ul>
+        <li><strong>Account #:</strong> ${details.accountNumber}</li>
+        <li><strong>Business:</strong> ${details.businessName}</li>
+        <li><strong>Contact:</strong> ${details.contactName} (${details.phone})</li>
+        <li><strong>Email:</strong> ${details.email}</li>
       </ul>
     `),
   };

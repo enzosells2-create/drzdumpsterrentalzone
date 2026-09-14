@@ -4,7 +4,7 @@ import { computeEndDate } from "@/lib/availability";
 import { DUMPSTER_SIZES } from "@/lib/pricing";
 import { isAdminAuthed } from "@/lib/admin-auth";
 import { stripe } from "@/lib/stripe-server";
-import { newBookingOwnerEmail, OWNER_EMAIL, sendEmail } from "@/lib/email";
+import { newBookingOwnerEmail, notifyOwner } from "@/lib/email";
 
 function generateConfirmationNumber(): string {
   const rand = Math.floor(1000 + Math.random() * 9000);
@@ -175,7 +175,10 @@ export async function POST(request: NextRequest) {
       deliveryDate: booking.startDate.toISOString().split("T")[0],
       price: booking.price,
     });
-    await sendEmail({ to: OWNER_EMAIL, ...notice });
+    await notifyOwner(
+      notice,
+      `New DRZ order: ${size.label} - ${booking.fullName} - $${booking.price.toFixed(2)} - delivers ${booking.startDate.toISOString().split("T")[0]}`
+    );
 
     return NextResponse.json({
       confirmationNumber: booking.confirmationNumber,

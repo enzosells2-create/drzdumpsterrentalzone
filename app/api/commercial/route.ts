@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isAdminAuthed } from "@/lib/admin-auth";
+import { newCommercialAccountOwnerEmail, notifyOwner } from "@/lib/email";
 
 function generateAccountNumber(): string {
   const rand = Math.floor(1000 + Math.random() * 9000);
@@ -60,6 +61,16 @@ export async function POST(request: NextRequest) {
         signature: body.signature.trim(),
       },
     });
+
+    // Best-effort — the account is already created either way.
+    const notice = newCommercialAccountOwnerEmail({
+      accountNumber: account.accountNumber,
+      businessName: account.businessName,
+      contactName: account.contactName,
+      email: account.email,
+      phone: account.phone,
+    });
+    await notifyOwner(notice, `New DRZ commercial account: ${account.businessName} (${account.accountNumber})`);
 
     return NextResponse.json({ accountNumber: account.accountNumber });
   } catch (err) {
