@@ -135,6 +135,29 @@ export function newBookingOwnerEmail(details: {
   };
 }
 
+export function commercialAccountWelcomeEmail(details: {
+  businessName: string;
+  contactName: string;
+  accountNumber: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `Your ${COMPANY.name} commercial account & login code`,
+    html: wrapper(`
+      <p>Hi ${details.contactName},</p>
+      <p>Thanks for setting up a commercial account for <strong>${details.businessName}</strong>! You're
+      all set to start ordering dumpsters at $50 off the standard rate, billed on a Net 30 credit
+      line — no card needed at checkout.</p>
+      <div style="margin: 20px 0; padding: 16px 20px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; text-align: center;">
+        <p style="margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #166534;">Your Account Number / Login Code</p>
+        <p style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.03em; color: #166534; font-family: monospace;">${details.accountNumber}</p>
+      </div>
+      <p>Keep this number handy — it's how you log in at
+      <a href="https://drzdumpsterentalzone.com/commercial/login" style="color:#ef4444;">drzdumpsterentalzone.com/commercial/login</a>
+      to view your orders and balance, and it's also what you'll enter to place a new order.</p>
+    `),
+  };
+}
+
 export function newCommercialOrderOwnerEmail(details: {
   confirmationNumber: string;
   sizeLabel: string;

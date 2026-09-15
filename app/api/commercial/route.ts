@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isAdminAuthed } from "@/lib/admin-auth";
-import { newCommercialAccountOwnerEmail, notifyOwner } from "@/lib/email";
+import { commercialAccountWelcomeEmail, newCommercialAccountOwnerEmail, notifyOwner, sendEmail } from "@/lib/email";
 import { setCommercialSession } from "@/lib/commercial-auth";
 
 function generateAccountNumber(): string {
@@ -72,6 +72,16 @@ export async function POST(request: NextRequest) {
       phone: account.phone,
     });
     await notifyOwner(notice, `New DRZ commercial account: ${account.businessName} (${account.accountNumber})`);
+
+    // Email the new business their account number/login code at the address
+    // they just gave us. Best-effort — the account is already created and
+    // shown on-screen either way.
+    const welcome = commercialAccountWelcomeEmail({
+      businessName: account.businessName,
+      contactName: account.contactName,
+      accountNumber: account.accountNumber,
+    });
+    await sendEmail({ to: account.email, ...welcome });
 
     // Log the new business straight into their portal — no need to re-enter
     // the account number they were just given.
