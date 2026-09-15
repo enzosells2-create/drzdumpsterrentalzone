@@ -1,21 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Briefcase,
-  ChevronDown,
-  LogOut,
-  Mail,
-  MapPin,
-  MessageSquare,
-  Phone,
-  Tag,
-} from "lucide-react";
+import { Briefcase, ChevronDown, Mail, MapPin, Phone } from "lucide-react";
+import AdminHeader from "@/components/AdminHeader";
 import { COMMERCIAL_MIN_ORDERS_PER_MONTH } from "@/lib/commercial";
-import { COMPANY, DUMPSTER_SIZES } from "@/lib/pricing";
+import { DUMPSTER_SIZES } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
 
 export type SerializedCommercialOrder = {
@@ -98,7 +87,6 @@ export default function AdminCommercialTable({
 }: {
   initialAccounts: SerializedCommercialAccount[];
 }) {
-  const router = useRouter();
   const [accounts, setAccounts] = useState(initialAccounts);
   const [updatingAccountId, setUpdatingAccountId] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
@@ -200,53 +188,9 @@ export default function AdminCommercialTable({
     }
   }
 
-  async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-    router.refresh();
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-40 border-b-[3px] border-red bg-gradient-to-br from-navy to-navy-light text-white shadow-lg">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-red to-red-dark">
-              <Briefcase className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="font-heading text-lg font-bold leading-tight">{COMPANY.name}</p>
-              <p className="text-xs text-white/70">Commercial Accounts</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <ArrowLeft className="h-4 w-4" /> Bookings
-            </Link>
-            <Link
-              href="/admin/messages"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <MessageSquare className="h-4 w-4" /> Messages
-            </Link>
-            <Link
-              href="/admin/promo-codes"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <Tag className="h-4 w-4" /> Promo Codes
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <LogOut className="h-4 w-4" /> Log Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <AdminHeader icon={Briefcase} subtitle="Commercial Accounts" current="commercial" />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <h1 className="font-heading text-2xl font-bold text-navy">Commercial Accounts</h1>

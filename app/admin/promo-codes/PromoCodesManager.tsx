@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Briefcase, LogOut, MessageSquare, Tag, Trash2 } from "lucide-react";
-import { COMPANY } from "@/lib/pricing";
+import { Tag, Trash2 } from "lucide-react";
+import AdminHeader from "@/components/AdminHeader";
 
 export type SerializedPromoCode = {
   id: string;
@@ -21,7 +19,6 @@ function formatDate(iso: string): string {
 }
 
 export default function PromoCodesManager({ initialCodes }: { initialCodes: SerializedPromoCode[] }) {
-  const router = useRouter();
   const [codes, setCodes] = useState(initialCodes);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -101,53 +98,9 @@ export default function PromoCodesManager({ initialCodes }: { initialCodes: Seri
     }
   }
 
-  async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-    router.refresh();
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-40 border-b-[3px] border-red bg-gradient-to-br from-navy to-navy-light text-white shadow-lg">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-red to-red-dark">
-              <Tag className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="font-heading text-lg font-bold leading-tight">{COMPANY.name}</p>
-              <p className="text-xs text-white/70">Promo Codes</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <ArrowLeft className="h-4 w-4" /> Bookings
-            </Link>
-            <Link
-              href="/admin/commercial"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <Briefcase className="h-4 w-4" /> Commercial
-            </Link>
-            <Link
-              href="/admin/messages"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <MessageSquare className="h-4 w-4" /> Messages
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <LogOut className="h-4 w-4" /> Log Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <AdminHeader icon={Tag} subtitle="Promo Codes" current="promo-codes" />
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <h1 className="font-heading text-2xl font-bold text-navy">Promo Codes</h1>

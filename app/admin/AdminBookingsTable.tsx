@@ -2,9 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Briefcase, CheckCircle2, LogOut, MapPin, MessageSquare, Package, Phone, PhoneCall, Tag, Trash2, Truck } from "lucide-react";
-import { COMPANY } from "@/lib/pricing";
+import { CheckCircle2, MapPin, Package, Phone, PhoneCall, Tag, Trash2, Truck } from "lucide-react";
+import AdminHeader from "@/components/AdminHeader";
 import { formatCurrency } from "@/lib/format";
 import { DumpsterSizeOption } from "@/lib/types";
 
@@ -67,7 +66,6 @@ export default function AdminBookingsTable({
   initialBookings: SerializedBooking[];
   sizes: DumpsterSizeOption[];
 }) {
-  const router = useRouter();
   const [bookings, setBookings] = useState(initialBookings);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [stageUpdatingId, setStageUpdatingId] = useState<string | null>(null);
@@ -161,53 +159,9 @@ export default function AdminBookingsTable({
     }
   }
 
-  async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-    router.refresh();
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-40 border-b-[3px] border-red bg-gradient-to-br from-navy to-navy-light text-white shadow-lg">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-red to-red-dark">
-              <Trash2 className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="font-heading text-lg font-bold leading-tight">{COMPANY.name}</p>
-              <p className="text-xs text-white/70">Bookings Admin</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/admin/commercial"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <Briefcase className="h-4 w-4" /> Commercial
-            </Link>
-            <Link
-              href="/admin/messages"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <MessageSquare className="h-4 w-4" /> Messages
-            </Link>
-            <Link
-              href="/admin/promo-codes"
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <Tag className="h-4 w-4" /> Promo Codes
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
-            >
-              <LogOut className="h-4 w-4" /> Log Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <AdminHeader icon={Trash2} subtitle="Bookings Admin" current="bookings" />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <h1 className="font-heading text-2xl font-bold text-navy">All Bookings</h1>
