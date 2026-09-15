@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Header from "@/components/Header";
 import CommercialOrderForm from "./CommercialOrderForm";
 
@@ -17,7 +18,9 @@ export default function CommercialOrderPage() {
           your discounted rate — you'll be invoiced, no card needed.
         </p>
         <div className="mt-6">
-          <CommercialOrderForm />
+          <Suspense fallback={null}>
+            <CommercialOrderForm />
+          </Suspense>
         </div>
       </main>
     </div>

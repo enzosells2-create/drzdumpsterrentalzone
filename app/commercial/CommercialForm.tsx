@@ -114,15 +114,23 @@ export default function CommercialForm() {
             <span className="font-mono font-semibold">{accountNumber}</span>
           </p>
           <p className="mt-1 text-sm text-green-700">
-            Save this number — you'll need it every time you place an order. You're all set to start
-            ordering dumpsters at your discounted rate.
+            Save this number — it&apos;s also how you log in. You're all set to start ordering
+            dumpsters at your discounted rate.
           </p>
-          <Link
-            href="/commercial/order"
-            className="mt-4 inline-block rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light"
-          >
-            Place Your First Order
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="/commercial/account"
+              className="inline-block rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light"
+            >
+              Go to My Account
+            </Link>
+            <Link
+              href={`/commercial/order?account=${encodeURIComponent(accountNumber)}`}
+              className="inline-block rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-navy ring-1 ring-gray-200 transition hover:bg-gray-50"
+            >
+              Place Your First Order
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -293,8 +301,8 @@ export default function CommercialForm() {
 
       <p className="text-center text-sm text-gray-500">
         Already have a commercial account?{" "}
-        <Link href="/commercial/order" className="font-semibold text-navy underline underline-offset-4 hover:text-red">
-          Place an order
+        <Link href="/commercial/login" className="font-semibold text-navy underline underline-offset-4 hover:text-red">
+          Log in
         </Link>
       </p>
     </form>

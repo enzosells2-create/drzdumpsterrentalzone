@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { calculateCommercialPrice } from "@/lib/commercial";
 import { DUMPSTER_SIZES, RENTAL_DURATION_OPTIONS } from "@/lib/pricing";
@@ -32,7 +33,9 @@ const initialForm: FormState = {
 type FieldErrors = Partial<Record<keyof FormState, string>>;
 
 export default function CommercialOrderForm() {
-  const [form, setForm] = useState<FormState>(initialForm);
+  const searchParams = useSearchParams();
+  const prefilledAccount = searchParams.get("account") ?? "";
+  const [form, setForm] = useState<FormState>({ ...initialForm, accountNumber: prefilledAccount });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -115,15 +118,23 @@ export default function CommercialOrderForm() {
             We'll be in touch to confirm delivery. This order will be included on your next monthly
             invoice — no card charge today.
           </p>
-          <button
-            onClick={() => {
-              setResult(null);
-              setForm((f) => ({ ...initialForm, accountNumber: f.accountNumber }));
-            }}
-            className="mt-4 rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light"
-          >
-            Place Another Order
-          </button>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              onClick={() => {
+                setResult(null);
+                setForm((f) => ({ ...initialForm, accountNumber: f.accountNumber }));
+              }}
+              className="rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light"
+            >
+              Place Another Order
+            </button>
+            <Link
+              href="/commercial/account"
+              className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-navy ring-1 ring-gray-200 transition hover:bg-gray-50"
+            >
+              View My Account
+            </Link>
+          </div>
         </div>
       </div>
     );

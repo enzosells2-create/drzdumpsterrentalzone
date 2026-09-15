@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isAdminAuthed } from "@/lib/admin-auth";
 import { newCommercialAccountOwnerEmail, notifyOwner } from "@/lib/email";
+import { setCommercialSession } from "@/lib/commercial-auth";
 
 function generateAccountNumber(): string {
   const rand = Math.floor(1000 + Math.random() * 9000);
@@ -71,6 +72,10 @@ export async function POST(request: NextRequest) {
       phone: account.phone,
     });
     await notifyOwner(notice, `New DRZ commercial account: ${account.businessName} (${account.accountNumber})`);
+
+    // Log the new business straight into their portal — no need to re-enter
+    // the account number they were just given.
+    await setCommercialSession(account.id);
 
     return NextResponse.json({ accountNumber: account.accountNumber });
   } catch (err) {
