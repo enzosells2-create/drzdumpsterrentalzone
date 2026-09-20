@@ -81,7 +81,7 @@ export const DUMPSTER_SIZES: DumpsterSizeOption[] = [
   },
   {
     id: "20-yard-trailer",
-    label: "20 Yard (Wheeled Trailer)",
+    label: "20 Yard (Roll-Off)",
     units: 6,
     oneDayPrice: 350,
     threeDayPrice: 400,
