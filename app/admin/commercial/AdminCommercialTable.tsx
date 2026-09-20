@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Briefcase, ChevronDown, Mail, MapPin, Phone } from "lucide-react";
+import Link from "next/link";
+import { Briefcase, ChevronDown, Mail, MapPin, Phone, PlusCircle } from "lucide-react";
 import AdminHeader from "@/components/AdminHeader";
 import { COMMERCIAL_MIN_ORDERS_PER_MONTH } from "@/lib/commercial";
 import { DUMPSTER_SIZES } from "@/lib/pricing";
@@ -193,10 +194,20 @@ export default function AdminCommercialTable({
       <AdminHeader icon={Briefcase} subtitle="Commercial Accounts" current="commercial" />
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <h1 className="font-heading text-2xl font-bold text-navy">Commercial Accounts</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {accounts.length} total, {activeAccounts.length} active
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-heading text-2xl font-bold text-navy">Commercial Accounts</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              {accounts.length} total, {activeAccounts.length} active
+            </p>
+          </div>
+          <Link
+            href="/admin/commercial/new"
+            className="flex items-center gap-1.5 rounded-lg bg-red px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-dark"
+          >
+            <PlusCircle className="h-4 w-4" /> New Account
+          </Link>
+        </div>
         <p className="mt-1 text-sm text-gray-500">
           Each account needs at least {COMMERCIAL_MIN_ORDERS_PER_MONTH} orders per calendar month to
           keep the $50-off rate. For a shortfall month, edit that order's balance below to bill the

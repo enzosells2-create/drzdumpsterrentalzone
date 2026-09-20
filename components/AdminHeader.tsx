@@ -10,7 +10,10 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  PlusCircle,
   Tag,
+  Trash2,
+  Truck,
   X,
 } from "lucide-react";
 import { COMPANY } from "@/lib/pricing";
@@ -24,18 +27,33 @@ const NAV_ITEMS: { key: AdminNavKey; href: string; label: string; icon: LucideIc
   { key: "promo-codes", href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
 ];
 
+// Not a tab within the admin nav — it's a separate login (employees don't
+// get the admin password), so it always shows and opens in a new tab.
+const EMPLOYEE_LINK = { href: "/employee", label: "Deliveries", icon: Truck };
+
+// A Server Component can't hand a component reference (like a Lucide icon)
+// across the server/client boundary — only plain serializable props. Pages
+// that render AdminHeader from a Server Component (e.g. app/admin/*/page.tsx)
+// pass one of these string keys instead; AdminHeader resolves the icon
+// itself. Client-component callers may still pass either form.
+const ICONS = { trash: Trash2, briefcase: Briefcase, message: MessageSquare, tag: Tag, plus: PlusCircle } as const;
+export type AdminIconKey = keyof typeof ICONS;
+
 export default function AdminHeader({
-  icon: Icon,
+  icon,
   subtitle,
   current,
 }: {
-  icon: LucideIcon;
+  icon: LucideIcon | AdminIconKey;
   subtitle: string;
-  current: AdminNavKey;
+  /** Omit on a sub-page (e.g. "New Booking") to show every nav link, including
+   * the one back to its own section. */
+  current?: AdminNavKey;
 }) {
+  const Icon = typeof icon === "string" ? ICONS[icon] : icon;
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const links = NAV_ITEMS.filter((item) => item.key !== current);
+  const links = current ? NAV_ITEMS.filter((item) => item.key !== current) : NAV_ITEMS;
 
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST" });
@@ -69,6 +87,14 @@ export default function AdminHeader({
               <item.icon className="h-4 w-4" /> {item.label}
             </Link>
           ))}
+          <a
+            href={EMPLOYEE_LINK.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
+          >
+            <EMPLOYEE_LINK.icon className="h-4 w-4" /> {EMPLOYEE_LINK.label}
+          </a>
           <button
             onClick={handleLogout}
             className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-2 text-sm font-semibold transition hover:bg-white/20"
@@ -101,6 +127,15 @@ export default function AdminHeader({
               <item.icon className="h-4 w-4" /> {item.label}
             </Link>
           ))}
+          <a
+            href={EMPLOYEE_LINK.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-white/90 transition hover:bg-white/10"
+          >
+            <EMPLOYEE_LINK.icon className="h-4 w-4" /> {EMPLOYEE_LINK.label}
+          </a>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-white/90 transition hover:bg-white/10"
