@@ -12,6 +12,7 @@ export type ScheduleEvent = {
   date: string; // ISO
   type: "Delivery" | "Pickup";
   sizeId: string;
+  unitNumber: number | null;
   address: string;
   commercial: boolean;
 };
@@ -31,13 +32,23 @@ export default async function EmployeePage() {
         city: true,
         state: true,
         zip: true,
+        unitNumber: true,
         deliveredAt: true,
         pickedUpAt: true,
       },
     }),
     db.commercialOrder.findMany({
       where: { status: { in: [...ACTIVE_STATUSES] } },
-      select: { sizeId: true, startDate: true, endDate: true, street: true, city: true, state: true, zip: true },
+      select: {
+        sizeId: true,
+        startDate: true,
+        endDate: true,
+        street: true,
+        city: true,
+        state: true,
+        zip: true,
+        unitNumber: true,
+      },
     }),
   ]);
 
@@ -46,10 +57,24 @@ export default async function EmployeePage() {
   for (const b of bookings) {
     const address = `${b.street}, ${b.city}, ${b.state} ${b.zip}`;
     if (!b.deliveredAt) {
-      events.push({ date: b.startDate.toISOString(), type: "Delivery", sizeId: b.sizeId, address, commercial: false });
+      events.push({
+        date: b.startDate.toISOString(),
+        type: "Delivery",
+        sizeId: b.sizeId,
+        unitNumber: b.unitNumber,
+        address,
+        commercial: false,
+      });
     }
     if (!b.pickedUpAt) {
-      events.push({ date: b.endDate.toISOString(), type: "Pickup", sizeId: b.sizeId, address, commercial: false });
+      events.push({
+        date: b.endDate.toISOString(),
+        type: "Pickup",
+        sizeId: b.sizeId,
+        unitNumber: b.unitNumber,
+        address,
+        commercial: false,
+      });
     }
   }
 
@@ -58,8 +83,22 @@ export default async function EmployeePage() {
     // CommercialOrder has no granular deliveredAt/pickedUpAt — status alone
     // (already filtered to Pending/Confirmed above) tells us both events
     // still need to happen.
-    events.push({ date: o.startDate.toISOString(), type: "Delivery", sizeId: o.sizeId, address, commercial: true });
-    events.push({ date: o.endDate.toISOString(), type: "Pickup", sizeId: o.sizeId, address, commercial: true });
+    events.push({
+      date: o.startDate.toISOString(),
+      type: "Delivery",
+      sizeId: o.sizeId,
+      unitNumber: o.unitNumber,
+      address,
+      commercial: true,
+    });
+    events.push({
+      date: o.endDate.toISOString(),
+      type: "Pickup",
+      sizeId: o.sizeId,
+      unitNumber: o.unitNumber,
+      address,
+      commercial: true,
+    });
   }
 
   events.sort((a, b) => a.date.localeCompare(b.date));

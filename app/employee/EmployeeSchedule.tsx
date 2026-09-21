@@ -114,7 +114,10 @@ export default function EmployeeSchedule({ events }: { events: ScheduleEvent[] }
                           >
                             {e.type}
                           </span>
-                          <span className="font-semibold text-navy">{sizeLabel(e.sizeId)}</span>
+                          <span className="font-semibold text-navy">
+                            {sizeLabel(e.sizeId)}
+                            {e.unitNumber && <span className="text-gray-400"> #{e.unitNumber}</span>}
+                          </span>
                           {e.commercial && (
                             <span className="flex items-center gap-1 rounded-full bg-navy/5 px-2 py-0.5 text-[11px] font-semibold text-navy">
                               <Briefcase className="h-3 w-3" /> Commercial

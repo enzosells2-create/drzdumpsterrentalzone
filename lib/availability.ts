@@ -63,6 +63,41 @@ export async function countOverlapping(
   return bookingCount + commercialCount;
 }
 
+/**
+ * Whether physical unit #`unitNumber` of `sizeId` is currently assigned to
+ * another active (Pending/Confirmed) booking or commercial order — the two
+ * share one numbering pool per size, so a "12-Yard #3" can't go out twice at
+ * once regardless of which table it's booked through. Pass whichever of
+ * `excludeBookingId`/`excludeOrderId` matches the record being updated so it
+ * doesn't conflict with itself.
+ */
+export async function isUnitNumberTaken(
+  sizeId: string,
+  unitNumber: number,
+  excludeBookingId?: string,
+  excludeOrderId?: string
+): Promise<boolean> {
+  const [bookingCount, orderCount] = await Promise.all([
+    db.booking.count({
+      where: {
+        sizeId,
+        unitNumber,
+        status: { in: [...ACTIVE_STATUSES] },
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      },
+    }),
+    db.commercialOrder.count({
+      where: {
+        sizeId,
+        unitNumber,
+        status: { in: [...ACTIVE_STATUSES] },
+        ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
+      },
+    }),
+  ]);
+  return bookingCount + orderCount > 0;
+}
+
 export type AvailabilityResult = {
   available: boolean;
   unitsTotal: number;

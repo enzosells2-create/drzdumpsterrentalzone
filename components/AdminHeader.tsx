@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Briefcase,
+  DollarSign,
   LucideIcon,
   LogOut,
+  MapPin,
   Menu,
   MessageSquare,
   PlusCircle,
@@ -18,13 +20,15 @@ import {
 } from "lucide-react";
 import { COMPANY } from "@/lib/pricing";
 
-export type AdminNavKey = "bookings" | "commercial" | "messages" | "promo-codes";
+export type AdminNavKey = "bookings" | "commercial" | "messages" | "promo-codes" | "map" | "finances";
 
 const NAV_ITEMS: { key: AdminNavKey; href: string; label: string; icon: LucideIcon }[] = [
   { key: "bookings", href: "/admin", label: "Bookings", icon: ArrowLeft },
   { key: "commercial", href: "/admin/commercial", label: "Commercial", icon: Briefcase },
   { key: "messages", href: "/admin/messages", label: "Messages", icon: MessageSquare },
   { key: "promo-codes", href: "/admin/promo-codes", label: "Promo Codes", icon: Tag },
+  { key: "map", href: "/admin/map", label: "Map", icon: MapPin },
+  { key: "finances", href: "/admin/finances", label: "Finances", icon: DollarSign },
 ];
 
 // Not a tab within the admin nav — it's a separate login (employees don't
@@ -36,7 +40,15 @@ const EMPLOYEE_LINK = { href: "/employee", label: "Deliveries", icon: Truck };
 // that render AdminHeader from a Server Component (e.g. app/admin/*/page.tsx)
 // pass one of these string keys instead; AdminHeader resolves the icon
 // itself. Client-component callers may still pass either form.
-const ICONS = { trash: Trash2, briefcase: Briefcase, message: MessageSquare, tag: Tag, plus: PlusCircle } as const;
+const ICONS = {
+  trash: Trash2,
+  briefcase: Briefcase,
+  message: MessageSquare,
+  tag: Tag,
+  plus: PlusCircle,
+  map: MapPin,
+  dollar: DollarSign,
+} as const;
 export type AdminIconKey = keyof typeof ICONS;
 
 export default function AdminHeader({

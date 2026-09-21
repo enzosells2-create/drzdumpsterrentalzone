@@ -21,6 +21,7 @@ export type SerializedCommercialOrder = {
   city: string;
   state: string;
   zip: string;
+  unitNumber: number | null;
   outstandingBalance: number;
   outstandingNote: string | null;
   createdAt: string;
@@ -71,6 +72,10 @@ function sizeLabel(sizeId: string): string {
   return DUMPSTER_SIZES.find((s) => s.id === sizeId)?.label ?? sizeId;
 }
 
+function sizeUnits(sizeId: string): number {
+  return DUMPSTER_SIZES.find((s) => s.id === sizeId)?.units ?? 0;
+}
+
 function ordersThisMonth(orders: SerializedCommercialOrder[]): number {
   const now = new Date();
   const year = now.getUTCFullYear();
@@ -91,6 +96,7 @@ export default function AdminCommercialTable({
   const [accounts, setAccounts] = useState(initialAccounts);
   const [updatingAccountId, setUpdatingAccountId] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [updatingUnitId, setUpdatingUnitId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(
     initialAccounts[0]?.id ?? null
   );
@@ -141,6 +147,31 @@ export default function AdminCommercialTable({
       alert("Couldn't update that order. Please try again.");
     } finally {
       setUpdatingOrderId(null);
+    }
+  }
+
+  async function handleOrderUnitChange(accountId: string, orderId: string, value: string) {
+    const unitNumber = value === "" ? null : Number(value);
+    setUpdatingUnitId(orderId);
+    const previous = accounts;
+    setAccounts((prev) =>
+      prev.map((a) =>
+        a.id !== accountId ? a : { ...a, orders: a.orders.map((o) => (o.id === orderId ? { ...o, unitNumber } : o)) }
+      )
+    );
+    try {
+      const res = await fetch(`/api/admin/commercial-orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unitNumber }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Update failed");
+    } catch (err) {
+      setAccounts(previous);
+      alert(err instanceof Error ? err.message : "Couldn't assign that unit. Please try again.");
+    } finally {
+      setUpdatingUnitId(null);
     }
   }
 
@@ -292,6 +323,7 @@ export default function AdminCommercialTable({
                             <thead>
                               <tr className="text-xs uppercase tracking-wide text-gray-400">
                                 <th className="py-2 pr-3 font-semibold">Confirmation</th>
+                                <th className="py-2 pr-3 font-semibold">Unit #</th>
                                 <th className="py-2 pr-3 font-semibold">Size</th>
                                 <th className="py-2 pr-3 font-semibold">Dates</th>
                                 <th className="py-2 pr-3 font-semibold">Address</th>
@@ -305,6 +337,23 @@ export default function AdminCommercialTable({
                                 <tr key={o.id} className="border-t border-gray-100 align-top">
                                   <td className="py-2.5 pr-3 font-mono text-xs font-semibold text-navy">
                                     {o.confirmationNumber}
+                                  </td>
+                                  <td className="py-2.5 pr-3">
+                                    <select
+                                      value={o.unitNumber ?? ""}
+                                      disabled={updatingUnitId === o.id}
+                                      onChange={(e) => handleOrderUnitChange(a.id, o.id, e.target.value)}
+                                      className={`rounded-lg border px-2 py-1 text-xs font-semibold outline-none disabled:opacity-50 ${
+                                        o.unitNumber ? "border-navy/20 bg-navy/5 text-navy" : "border-gray-200 text-gray-400"
+                                      }`}
+                                    >
+                                      <option value="">—</option>
+                                      {Array.from({ length: sizeUnits(o.sizeId) }, (_, i) => i + 1).map((n) => (
+                                        <option key={n} value={n}>
+                                          #{n}
+                                        </option>
+                                      ))}
+                                    </select>
                                   </td>
                                   <td className="py-2.5 pr-3 text-gray-600">{sizeLabel(o.sizeId)}</td>
                                   <td className="py-2.5 pr-3 text-xs text-gray-500">

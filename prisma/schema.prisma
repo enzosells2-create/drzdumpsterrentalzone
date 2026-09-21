@@ -29,6 +29,15 @@ model Booking {
   // up. Cancelled -> no longer holds the inventory slot.
   status String @default("Pending")
 
+  // Which physical dumpster (of that size) this order is assigned to — e.g.
+  // 3 for the "12-Yard #3" unit the owner has physically labeled. Set
+  // manually by the owner from admin, not at booking time; null until
+  // assigned. Uniqueness among active bookings/orders of the same size is
+  // enforced in application code (lib/availability.ts), not the database,
+  // since it must also account for CommercialOrder's numbers in the same
+  // shared pool.
+  unitNumber Int?
+
   fullName String
   email    String
   phone    String
@@ -132,6 +141,11 @@ model CommercialOrder {
   // Pending -> just ordered. Confirmed -> delivery details confirmed.
   // Completed -> picked up. Cancelled -> no longer holds the slot.
   status String @default("Pending")
+
+  // Which physical dumpster (of that size) this order is assigned to — see
+  // the matching field on Booking for the full explanation. Shares the same
+  // per-size numbering pool as Booking.unitNumber.
+  unitNumber Int?
 
   street String
   city   String

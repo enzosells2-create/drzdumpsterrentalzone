@@ -28,6 +28,7 @@ export default async function AdminPage() {
     zip: b.zip,
     pinLat: b.pinLat,
     pinLng: b.pinLng,
+    unitNumber: b.unitNumber,
     cardBrand: b.cardBrand,
     cardLast4: b.cardLast4,
     promoCode: b.promoCode,

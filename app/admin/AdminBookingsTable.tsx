@@ -25,6 +25,7 @@ export type SerializedBooking = {
   zip: string;
   pinLat: number | null;
   pinLng: number | null;
+  unitNumber: number | null;
   cardBrand: string | null;
   cardLast4: string | null;
   promoCode: string | null;
@@ -68,6 +69,7 @@ export default function AdminBookingsTable({
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [updatingUnitId, setUpdatingUnitId] = useState<string | null>(null);
   const [stageUpdatingId, setStageUpdatingId] = useState<string | null>(null);
   const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
   const [balanceDraft, setBalanceDraft] = useState({ amount: "", note: "" });
@@ -127,6 +129,27 @@ export default function AdminBookingsTable({
       alert("Couldn't send that notification. Please try again.");
     } finally {
       setStageUpdatingId(null);
+    }
+  }
+
+  async function handleUnitChange(id: string, value: string) {
+    const unitNumber = value === "" ? null : Number(value);
+    setUpdatingUnitId(id);
+    const previous = bookings;
+    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, unitNumber } : b)));
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ unitNumber }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Update failed");
+    } catch (err) {
+      setBookings(previous);
+      alert(err instanceof Error ? err.message : "Couldn't assign that unit. Please try again.");
+    } finally {
+      setUpdatingUnitId(null);
     }
   }
 
@@ -205,6 +228,7 @@ export default function AdminBookingsTable({
                       <thead>
                         <tr className="text-xs uppercase tracking-wide text-gray-400">
                           <th className="px-5 py-2.5 font-semibold">Confirmation</th>
+                          <th className="px-5 py-2.5 font-semibold">Unit #</th>
                           <th className="px-5 py-2.5 font-semibold">Customer</th>
                           <th className="px-5 py-2.5 font-semibold">Dates</th>
                           <th className="px-5 py-2.5 font-semibold">Price</th>
@@ -218,6 +242,23 @@ export default function AdminBookingsTable({
                           <tr key={b.id} className="border-t border-gray-100 align-top">
                             <td className="px-5 py-3 font-mono text-xs font-semibold text-navy">
                               {b.confirmationNumber}
+                            </td>
+                            <td className="px-5 py-3">
+                              <select
+                                value={b.unitNumber ?? ""}
+                                disabled={updatingUnitId === b.id}
+                                onChange={(e) => handleUnitChange(b.id, e.target.value)}
+                                className={`rounded-lg border px-2 py-1 text-xs font-semibold outline-none disabled:opacity-50 ${
+                                  b.unitNumber ? "border-navy/20 bg-navy/5 text-navy" : "border-gray-200 text-gray-400"
+                                }`}
+                              >
+                                <option value="">—</option>
+                                {Array.from({ length: size.units }, (_, i) => i + 1).map((n) => (
+                                  <option key={n} value={n}>
+                                    #{n}
+                                  </option>
+                                ))}
+                              </select>
                             </td>
                             <td className="px-5 py-3">
                               <p className="font-semibold text-navy">{b.fullName}</p>

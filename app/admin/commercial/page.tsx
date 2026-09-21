@@ -39,6 +39,7 @@ export default async function AdminCommercialPage() {
       city: o.city,
       state: o.state,
       zip: o.zip,
+      unitNumber: o.unitNumber,
       outstandingBalance: o.outstandingBalance,
       outstandingNote: o.outstandingNote,
       createdAt: o.createdAt.toISOString(),
