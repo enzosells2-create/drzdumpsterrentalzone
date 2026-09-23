@@ -73,6 +73,12 @@ model Booking {
   pickedUpAt     DateTime?
   thankYouSentAt DateTime?
 
+  // Set by the daily pickup-reminder cron (see app/api/cron/pickup-reminders)
+  // once it's emailed/texted the owner that this rental's end date has
+  // arrived and it's ready to be picked up. Non-null means "already
+  // notified" so the reminder only fires once per booking.
+  pickupReminderSentAt DateTime?
+
   // Money owed beyond what was already charged at checkout — e.g. overage
   // fees (extra tons, extra days, tires) discovered at pickup. Tracked and
   // marked paid manually by the admin; not tied to another Stripe charge.
@@ -154,6 +160,9 @@ model CommercialOrder {
 
   outstandingBalance Float   @default(0)
   outstandingNote    String?
+
+  // See Booking.pickupReminderSentAt — same purpose, same cron.
+  pickupReminderSentAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

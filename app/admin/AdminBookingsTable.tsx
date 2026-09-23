@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, MapPin, Package, Phone, PhoneCall, PlusCircle, Tag, Trash2, Truck } from "lucide-react";
 import AdminHeader from "@/components/AdminHeader";
 import { formatCurrency } from "@/lib/format";
+import { pickupCountdown, PickupUrgency } from "@/lib/pickup-status";
 import { DumpsterSizeOption } from "@/lib/types";
 
 export type SerializedBooking = {
@@ -46,6 +47,12 @@ const STATUS_STYLES: Record<string, string> = {
   Confirmed: "bg-blue-50 text-blue-700 ring-blue-200",
   Completed: "bg-green-50 text-green-700 ring-green-200",
   Cancelled: "bg-gray-100 text-gray-500 ring-gray-200",
+};
+
+const PICKUP_URGENCY_STYLES: Record<PickupUrgency, string> = {
+  upcoming: "bg-gray-100 text-gray-500 ring-gray-200",
+  "due-soon": "bg-amber-50 text-amber-700 ring-amber-200",
+  overdue: "bg-red/10 text-red ring-red/20",
 };
 
 function formatDate(iso: string): string {
@@ -234,6 +241,7 @@ export default function AdminBookingsTable({
                           <th className="px-5 py-2.5 font-semibold">Price</th>
                           <th className="px-5 py-2.5 font-semibold">Status</th>
                           <th className="px-5 py-2.5 font-semibold">Delivery</th>
+                          <th className="px-5 py-2.5 font-semibold">Pickup</th>
                           <th className="px-5 py-2.5 font-semibold">Balance</th>
                         </tr>
                       </thead>
@@ -321,6 +329,22 @@ export default function AdminBookingsTable({
                                   onClick={() => handleStageUpdate(b.id, "thankYou")}
                                 />
                               </div>
+                            </td>
+                            <td className="px-5 py-3">
+                              {ACTIVE_STATUSES.has(b.status) && !b.pickedUpAt ? (
+                                (() => {
+                                  const countdown = pickupCountdown(b.endDate);
+                                  return (
+                                    <span
+                                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${PICKUP_URGENCY_STYLES[countdown.urgency]}`}
+                                    >
+                                      {countdown.label}
+                                    </span>
+                                  );
+                                })()
+                              ) : (
+                                <span className="text-gray-300">—</span>
+                              )}
                             </td>
                             <td className="px-5 py-3">
                               {editingBalanceId === b.id ? (

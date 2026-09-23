@@ -7,6 +7,7 @@ import AdminHeader from "@/components/AdminHeader";
 import { COMMERCIAL_MIN_ORDERS_PER_MONTH } from "@/lib/commercial";
 import { DUMPSTER_SIZES } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/format";
+import { pickupCountdown, PickupUrgency } from "@/lib/pickup-status";
 
 export type SerializedCommercialOrder = {
   id: string;
@@ -57,6 +58,14 @@ const ORDER_STATUS_STYLES: Record<string, string> = {
   Confirmed: "bg-blue-50 text-blue-700 ring-blue-200",
   Completed: "bg-green-50 text-green-700 ring-green-200",
   Cancelled: "bg-gray-100 text-gray-500 ring-gray-200",
+};
+
+const ACTIVE_ORDER_STATUSES = new Set(["Pending", "Confirmed"]);
+
+const PICKUP_URGENCY_STYLES: Record<PickupUrgency, string> = {
+  upcoming: "bg-gray-100 text-gray-500 ring-gray-200",
+  "due-soon": "bg-amber-50 text-amber-700 ring-amber-200",
+  overdue: "bg-red/10 text-red ring-red/20",
 };
 
 function formatDate(iso: string): string {
@@ -329,6 +338,7 @@ export default function AdminCommercialTable({
                                 <th className="py-2 pr-3 font-semibold">Address</th>
                                 <th className="py-2 pr-3 font-semibold">Price</th>
                                 <th className="py-2 pr-3 font-semibold">Status</th>
+                                <th className="py-2 pr-3 font-semibold">Pickup</th>
                                 <th className="py-2 pr-3 font-semibold">Balance</th>
                               </tr>
                             </thead>
@@ -376,6 +386,22 @@ export default function AdminCommercialTable({
                                         </option>
                                       ))}
                                     </select>
+                                  </td>
+                                  <td className="py-2.5 pr-3">
+                                    {ACTIVE_ORDER_STATUSES.has(o.status) ? (
+                                      (() => {
+                                        const countdown = pickupCountdown(o.endDate);
+                                        return (
+                                          <span
+                                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${PICKUP_URGENCY_STYLES[countdown.urgency]}`}
+                                          >
+                                            {countdown.label}
+                                          </span>
+                                        );
+                                      })()
+                                    ) : (
+                                      <span className="text-gray-300">—</span>
+                                    )}
                                   </td>
                                   <td className="py-2.5 pr-3">
                                     {editingBalanceId === o.id ? (

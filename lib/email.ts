@@ -158,6 +158,30 @@ export function commercialAccountWelcomeEmail(details: {
   };
 }
 
+export function pickupReadyOwnerEmail(details: {
+  confirmationNumber: string;
+  sizeLabel: string;
+  name: string;
+  phone: string;
+  address: string;
+  endDate: string;
+  commercial: boolean;
+}): { subject: string; html: string } {
+  return {
+    subject: `Ready for pickup: ${details.sizeLabel} — ${details.name}`,
+    html: wrapper(`
+      <p>A rental's time is up — ready to be picked up:</p>
+      <ul>
+        <li><strong>Confirmation:</strong> ${details.confirmationNumber}</li>
+        <li><strong>Size:</strong> ${details.sizeLabel}${details.commercial ? " (Commercial)" : ""}</li>
+        <li><strong>${details.commercial ? "Business" : "Customer"}:</strong> ${details.name} (${details.phone})</li>
+        <li><strong>Address:</strong> ${details.address}</li>
+        <li><strong>Pickup date:</strong> ${details.endDate}</li>
+      </ul>
+    `),
+  };
+}
+
 export function newCommercialOrderOwnerEmail(details: {
   confirmationNumber: string;
   sizeLabel: string;
