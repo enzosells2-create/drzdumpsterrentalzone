@@ -219,7 +219,7 @@ export default function StepLocation({ data, onBack, onContinue }: Props) {
               disabled={!pin || submitting}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-red py-3 text-sm font-semibold text-white transition hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {submitting ? "Booking…" : "Complete Your Booking"}
+              {submitting ? "Saving…" : "Continue to Payment"}
               <ArrowRight className="h-4 w-4" />
             </button>
             <button

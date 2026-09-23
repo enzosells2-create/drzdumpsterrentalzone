@@ -16,6 +16,7 @@ export default function BookingFlow() {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<BookingData>(initialBookingData);
   const [confirmationNumber, setConfirmationNumber] = useState("");
+  const [bookingError, setBookingError] = useState("");
 
   function update(patch: Partial<BookingData>) {
     setData((prev) => ({ ...prev, ...patch }));
@@ -36,46 +37,72 @@ export default function BookingFlow() {
     setStep(2);
   }
 
+  // Location now comes before Payment — this just saves the pin and moves
+  // on. It stays async (matching StepLocation's onContinue signature/its
+  // submitting-state handling) even though there's no network call here.
   async function handleLocationContinue(pin: { lat: number; lng: number }) {
-    if (!data.size) throw new Error("No dumpster size selected.");
-    if (!data.stripePaymentIntentId) throw new Error("Payment was not completed.");
+    update({ pinLat: pin.lat, pinLng: pin.lng });
+    setStep(5);
+  }
 
-    const res = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sizeId: data.size.id,
-        deliveryDate: data.deliveryDate,
-        rentalDays: data.rentalDays,
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone,
-        street: data.street,
-        city: data.city,
-        state: data.state,
-        zip: data.zip,
-        pinLat: pin.lat,
-        pinLng: pin.lng,
-        stripePaymentIntentId: data.stripePaymentIntentId,
-      }),
-    });
+  // Payment is the last data-collecting step now, so the actual booking
+  // only gets created once it succeeds. `patch` (fresh from Stripe
+  // confirmation) hasn't landed in `data` yet at this point in the render
+  // cycle — merge it in locally rather than reading `data.*` directly, same
+  // pattern Step 2's onContinue already uses for its own patch.
+  async function handlePaymentContinue(patch: Partial<BookingData>) {
+    const merged = { ...data, ...patch };
+    update(patch);
+    setBookingError("");
 
-    const result = await res.json();
-    if (!res.ok) {
-      // 409 means someone else booked the last unit while this customer was
-      // filling out the form — surface the server's message and let them
-      // retry from Location (or go back and pick a different date/size).
-      throw new Error(result.error || "Something went wrong completing your booking.");
+    if (!merged.size || !merged.stripePaymentIntentId || merged.pinLat == null || merged.pinLng == null) {
+      setBookingError("Something went wrong — please try again.");
+      return;
     }
 
-    setConfirmationNumber(result.confirmationNumber);
-    // The server re-validates the promo code itself and is authoritative on
-    // the discount actually applied, so sync that back. `data.price` stays
-    // the base (pre-discount) rate throughout the flow — the confirmation
-    // page subtracts the discount from it for display, so overwriting it
-    // here with the server's already-discounted figure would double-count.
-    update({ pinLat: pin.lat, pinLng: pin.lng, discountAmount: result.discountAmount });
-    setStep(6);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sizeId: merged.size.id,
+          deliveryDate: merged.deliveryDate,
+          rentalDays: merged.rentalDays,
+          fullName: merged.fullName,
+          email: merged.email,
+          phone: merged.phone,
+          street: merged.street,
+          city: merged.city,
+          state: merged.state,
+          zip: merged.zip,
+          pinLat: merged.pinLat,
+          pinLng: merged.pinLng,
+          stripePaymentIntentId: merged.stripePaymentIntentId,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        // 409 means someone else booked the last unit while this customer
+        // was filling out the form. The payment already succeeded, so
+        // StepPayment's "already paid" branch will re-render with a
+        // Continue button — retrying calls this function again rather than
+        // charging a second time.
+        throw new Error(result.error || "Something went wrong completing your booking.");
+      }
+
+      setConfirmationNumber(result.confirmationNumber);
+      // The server re-validates the promo code itself and is authoritative
+      // on the discount actually applied, so sync that back. `data.price`
+      // stays the base (pre-discount) rate throughout the flow — the
+      // confirmation page subtracts the discount from it for display, so
+      // overwriting it here with the server's already-discounted figure
+      // would double-count.
+      update({ discountAmount: result.discountAmount });
+      setStep(6);
+    } catch (err) {
+      setBookingError(err instanceof Error ? err.message : "Something went wrong completing your booking.");
+    }
   }
 
   function resetFlow() {
@@ -143,18 +170,18 @@ export default function BookingFlow() {
           )}
 
           {step === 4 && (
-            <StepPayment
-              data={data}
-              onBack={() => setStep(3)}
-              onContinue={(patch) => {
-                update(patch);
-                setStep(5);
-              }}
-            />
+            <StepLocation data={data} onBack={() => setStep(3)} onContinue={handleLocationContinue} />
           )}
 
           {step === 5 && (
-            <StepLocation data={data} onBack={() => setStep(4)} onContinue={handleLocationContinue} />
+            <>
+              {bookingError && (
+                <div className="mx-auto mb-4 max-w-3xl rounded-lg bg-red/10 px-3.5 py-2.5 text-sm font-medium text-red">
+                  {bookingError}
+                </div>
+              )}
+              <StepPayment data={data} onBack={() => setStep(4)} onContinue={handlePaymentContinue} />
+            </>
           )}
 
           {step === 6 && (

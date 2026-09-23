@@ -173,7 +173,7 @@ export default function StepPayment({ data, onBack, onContinue }: Props) {
               {data.cardBrand || "card"} ending {data.cardLast4 || "••••"}.
             </p>
             <p className="mt-1 text-sm text-green-700">
-              You won't be charged again. Continue to pin your drop-off location.
+              You won't be charged again. Click Continue to complete your booking.
             </p>
           </div>
         </div>
