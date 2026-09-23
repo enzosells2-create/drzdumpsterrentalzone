@@ -42,6 +42,7 @@ export default async function AdminCommercialPage() {
       unitNumber: o.unitNumber,
       outstandingBalance: o.outstandingBalance,
       outstandingNote: o.outstandingNote,
+      invoicedAt: o.invoicedAt ? o.invoicedAt.toISOString() : null,
       createdAt: o.createdAt.toISOString(),
     })),
   }));

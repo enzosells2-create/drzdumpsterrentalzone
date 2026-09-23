@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Briefcase, ChevronDown, Mail, MapPin, Phone, PlusCircle } from "lucide-react";
+import { Briefcase, ChevronDown, FileText, Mail, MapPin, Phone, PlusCircle, Send } from "lucide-react";
 import AdminHeader from "@/components/AdminHeader";
 import { COMMERCIAL_MIN_ORDERS_PER_MONTH } from "@/lib/commercial";
 import { DUMPSTER_SIZES } from "@/lib/pricing";
@@ -25,6 +25,7 @@ export type SerializedCommercialOrder = {
   unitNumber: number | null;
   outstandingBalance: number;
   outstandingNote: string | null;
+  invoicedAt: string | null;
   createdAt: string;
 };
 
@@ -112,6 +113,12 @@ export default function AdminCommercialTable({
   const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
   const [balanceDraft, setBalanceDraft] = useState({ amount: "", note: "" });
   const [savingBalance, setSavingBalance] = useState(false);
+  const [invoicePanelAccountId, setInvoicePanelAccountId] = useState<string | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [sendingInvoice, setSendingInvoice] = useState(false);
+  const [invoiceResult, setInvoiceResult] = useState<{ accountId: string; total: number; sentTo: string } | null>(
+    null
+  );
 
   const activeAccounts = useMemo(() => accounts.filter((a) => a.status === "Active"), [accounts]);
 
@@ -229,6 +236,63 @@ export default function AdminCommercialTable({
     }
   }
 
+  function openInvoicePanel(a: SerializedCommercialAccount) {
+    setInvoiceResult(null);
+    if (invoicePanelAccountId === a.id) {
+      setInvoicePanelAccountId(null);
+      return;
+    }
+    // Default selection: every non-cancelled order not already invoiced.
+    const defaultSelected = a.orders.filter((o) => o.status !== "Cancelled" && !o.invoicedAt).map((o) => o.id);
+    setSelectedOrderIds(new Set(defaultSelected));
+    setInvoicePanelAccountId(a.id);
+  }
+
+  function toggleOrderSelected(orderId: string) {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  }
+
+  async function handleSendInvoice(accountId: string) {
+    const orderIds = [...selectedOrderIds];
+    if (orderIds.length === 0) {
+      alert("Select at least one order to invoice.");
+      return;
+    }
+    setSendingInvoice(true);
+    try {
+      const res = await fetch(`/api/admin/commercial/${accountId}/invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderIds }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Couldn't send the invoice.");
+      setAccounts((prev) =>
+        prev.map((a) =>
+          a.id !== accountId
+            ? a
+            : {
+                ...a,
+                orders: a.orders.map((o) =>
+                  orderIds.includes(o.id) ? { ...o, invoicedAt: result.invoicedAt } : o
+                ),
+              }
+        )
+      );
+      setInvoiceResult({ accountId, total: result.total, sentTo: result.sentTo });
+      setInvoicePanelAccountId(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Couldn't send the invoice. Please try again.");
+    } finally {
+      setSendingInvoice(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader icon={Briefcase} subtitle="Commercial Accounts" current="commercial" />
@@ -321,9 +385,38 @@ export default function AdminCommercialTable({
                         <p className="sm:col-span-2">Signed up {formatDate(a.createdAt)}</p>
                       </div>
 
-                      <h3 className="mt-4 font-heading text-xs font-bold uppercase tracking-wide text-navy">
-                        Orders ({a.orders.length})
-                      </h3>
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-heading text-xs font-bold uppercase tracking-wide text-navy">
+                          Orders ({a.orders.length})
+                        </h3>
+                        {a.orders.length > 0 && (
+                          <button
+                            onClick={() => openInvoicePanel(a)}
+                            className="flex items-center gap-1.5 rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-navy-light"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            {invoicePanelAccountId === a.id ? "Cancel Invoice" : "Send Invoice"}
+                          </button>
+                        )}
+                      </div>
+
+                      {invoiceResult && invoiceResult.accountId === a.id && (
+                        <div className="mt-3 rounded-lg bg-green-50 px-3.5 py-2.5 text-sm text-green-700 ring-1 ring-green-200">
+                          Invoice for {formatCurrency(invoiceResult.total)} emailed to {invoiceResult.sentTo}.
+                        </div>
+                      )}
+
+                      {invoicePanelAccountId === a.id && (
+                        <InvoicePanel
+                          account={a}
+                          selectedOrderIds={selectedOrderIds}
+                          onToggle={toggleOrderSelected}
+                          onSend={() => handleSendInvoice(a.id)}
+                          onCancel={() => setInvoicePanelAccountId(null)}
+                          sending={sendingInvoice}
+                        />
+                      )}
+
                       {a.orders.length === 0 ? (
                         <p className="mt-2 text-sm text-gray-400">No orders placed yet.</p>
                       ) : (
@@ -347,6 +440,11 @@ export default function AdminCommercialTable({
                                 <tr key={o.id} className="border-t border-gray-100 align-top">
                                   <td className="py-2.5 pr-3 font-mono text-xs font-semibold text-navy">
                                     {o.confirmationNumber}
+                                    {o.invoicedAt && (
+                                      <p className="mt-0.5 flex items-center gap-1 font-sans text-[11px] font-normal text-gray-400">
+                                        <FileText className="h-3 w-3" /> Invoiced {formatDate(o.invoicedAt)}
+                                      </p>
+                                    )}
                                   </td>
                                   <td className="py-2.5 pr-3">
                                     <select
@@ -471,6 +569,90 @@ export default function AdminCommercialTable({
           )}
         </div>
       </main>
+    </div>
+  );
+}
+
+function InvoicePanel({
+  account,
+  selectedOrderIds,
+  onToggle,
+  onSend,
+  onCancel,
+  sending,
+}: {
+  account: SerializedCommercialAccount;
+  selectedOrderIds: Set<string>;
+  onToggle: (orderId: string) => void;
+  onSend: () => void;
+  onCancel: () => void;
+  sending: boolean;
+}) {
+  const invoiceable = account.orders.filter((o) => o.status !== "Cancelled");
+  const total = invoiceable
+    .filter((o) => selectedOrderIds.has(o.id))
+    .reduce((sum, o) => sum + o.price + o.outstandingBalance, 0);
+
+  return (
+    <div className="mt-3 rounded-xl border border-navy/15 bg-blue-50/40 p-4">
+      <p className="text-sm font-medium text-navy">
+        Select which orders to bill {account.contactName} at {account.email} for:
+      </p>
+      {invoiceable.length === 0 ? (
+        <p className="mt-2 text-sm text-gray-400">No invoiceable orders (all cancelled).</p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {invoiceable.map((o) => (
+            <label
+              key={o.id}
+              className="flex items-start gap-2.5 rounded-lg bg-white px-3 py-2.5 text-sm ring-1 ring-gray-100"
+            >
+              <input
+                type="checkbox"
+                checked={selectedOrderIds.has(o.id)}
+                onChange={() => onToggle(o.id)}
+                className="mt-0.5 h-4 w-4 accent-navy"
+              />
+              <div className="flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-navy">
+                    {sizeLabel(o.sizeId)} — {o.confirmationNumber}
+                  </span>
+                  <span className="font-semibold text-navy">
+                    {formatCurrency(o.price + o.outstandingBalance)}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {formatDate(o.startDate)}
+                  {o.outstandingBalance > 0 && ` · +${formatCurrency(o.outstandingBalance)} additional`}
+                  {o.invoicedAt && ` · already invoiced ${formatDate(o.invoicedAt)}`}
+                </p>
+              </div>
+            </label>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-navy/10 pt-3">
+        <p className="text-sm font-semibold text-navy">
+          Total: <span className="font-heading text-base">{formatCurrency(total)}</span>
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="rounded-lg px-3.5 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onSend}
+            disabled={sending || selectedOrderIds.size === 0}
+            className="flex items-center gap-1.5 rounded-lg bg-red px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-dark disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Send className="h-3.5 w-3.5" /> {sending ? "Sending…" : "Send Invoice"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

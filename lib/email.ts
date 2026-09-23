@@ -158,6 +158,57 @@ export function commercialAccountWelcomeEmail(details: {
   };
 }
 
+export type InvoiceLineItem = {
+  confirmationNumber: string;
+  sizeLabel: string;
+  date: string;
+  amount: number;
+  note?: string;
+};
+
+export function commercialInvoiceEmail(details: {
+  businessName: string;
+  contactName: string;
+  accountNumber: string;
+  invoiceDate: string;
+  orderItems: InvoiceLineItem[];
+  extraItems: InvoiceLineItem[];
+  total: number;
+}): { subject: string; html: string } {
+  const row = (item: InvoiceLineItem) => `
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-size: 13px;">
+        ${item.sizeLabel}
+        <div style="color: #6b7280; font-size: 12px;">${item.confirmationNumber} · ${item.date}${item.note ? ` · ${item.note}` : ""}</div>
+      </td>
+      <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; font-size: 13px; text-align: right; white-space: nowrap;">
+        $${item.amount.toFixed(2)}
+      </td>
+    </tr>
+  `;
+
+  return {
+    subject: `Invoice from ${COMPANY.name} — ${details.businessName}`,
+    html: wrapper(`
+      <p>Hi ${details.contactName},</p>
+      <p>Here's your invoice for <strong>${details.businessName}</strong> (account
+      ${details.accountNumber}), dated ${details.invoiceDate}.</p>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+        ${details.orderItems.map(row).join("")}
+        ${details.extraItems.map(row).join("")}
+        <tr>
+          <td style="padding: 12px 0 0; font-size: 15px; font-weight: 700; color: #0f2247;">Total Due</td>
+          <td style="padding: 12px 0 0; font-size: 15px; font-weight: 700; color: #0f2247; text-align: right;">
+            $${details.total.toFixed(2)}
+          </td>
+        </tr>
+      </table>
+      <p style="margin-top: 20px;">Payment terms: Net 30 — due within 30 days of this invoice date.
+      Reply to this email or call us with any questions.</p>
+    `),
+  };
+}
+
 export function pickupReadyOwnerEmail(details: {
   confirmationNumber: string;
   sizeLabel: string;

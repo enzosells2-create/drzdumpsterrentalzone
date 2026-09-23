@@ -161,6 +161,12 @@ model CommercialOrder {
   outstandingBalance Float   @default(0)
   outstandingNote    String?
 
+  // Set when this order was last included in a manually-sent invoice email
+  // (see /api/admin/commercial/[id]/invoice) — null means never invoiced.
+  // Doesn't mean paid, just "billed" — Net 30 payment itself happens outside
+  // the site, so there's nothing further to track here.
+  invoicedAt DateTime?
+
   // See Booking.pickupReminderSentAt — same purpose, same cron.
   pickupReminderSentAt DateTime?
 
