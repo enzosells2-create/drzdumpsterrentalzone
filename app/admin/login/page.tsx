@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Lock, Trash2, Truck } from "lucide-react";
 import { COMPANY } from "@/lib/pricing";
 
 export default function AdminLoginPage() {
@@ -71,6 +72,13 @@ export default function AdminLoginPage() {
             {submitting ? "Signing in…" : "Sign In"}
           </button>
         </form>
+
+        <Link
+          href="/employee/login"
+          className="mt-5 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 py-2.5 text-sm font-semibold text-navy transition hover:bg-gray-50"
+        >
+          <Truck className="h-4 w-4" /> Employee? Log in here
+        </Link>
       </div>
     </div>
   );
