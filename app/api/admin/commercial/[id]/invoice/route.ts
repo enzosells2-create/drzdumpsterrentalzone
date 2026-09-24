@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { isAdminAuthed } from "@/lib/admin-auth";
 import { DUMPSTER_SIZES } from "@/lib/pricing";
 import { commercialInvoiceEmail, InvoiceLineItem, sendEmail } from "@/lib/email";
+import { stripe } from "@/lib/stripe-server";
+
+const SITE_URL = "https://drzdumpsterentalzone.com";
 
 function sizeLabel(sizeId: string): string {
   return DUMPSTER_SIZES.find((s) => s.id === sizeId)?.label ?? sizeId;
@@ -61,6 +64,37 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     orderItems.reduce((sum, i) => sum + i.amount, 0) + extraItems.reduce((sum, i) => sum + i.amount, 0);
   const invoiceDate = formatDate(new Date());
 
+  // Best-effort — a Stripe hiccup shouldn't block sending the invoice itself,
+  // it just means that one goes out without a "Pay by Card" button.
+  let payUrl: string | undefined;
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: { name: `DRZ Invoice — ${account.businessName} — ${invoiceDate}` },
+            unit_amount: Math.round(total * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      customer_email: account.email,
+      metadata: {
+        type: "commercial_invoice",
+        commercialAccountId: account.id,
+        businessName: account.businessName,
+        orderIds: orders.map((o) => o.id).join(","),
+      },
+      success_url: `${SITE_URL}/commercial/invoice-paid?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_URL}/commercial`,
+    });
+    payUrl = session.url ?? undefined;
+  } catch (err) {
+    console.error("Failed to create Stripe Checkout session for invoice:", err);
+  }
+
   const notice = commercialInvoiceEmail({
     businessName: account.businessName,
     contactName: account.contactName,
@@ -69,6 +103,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     orderItems,
     extraItems,
     total,
+    payUrl,
   });
 
   const sent = await sendEmail({ to: account.email, ...notice });

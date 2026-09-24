@@ -174,6 +174,8 @@ export function commercialInvoiceEmail(details: {
   orderItems: InvoiceLineItem[];
   extraItems: InvoiceLineItem[];
   total: number;
+  /** Live Stripe Checkout URL for this exact invoice, if card payment is offered. */
+  payUrl?: string;
 }): { subject: string; html: string } {
   const row = (item: InvoiceLineItem) => `
     <tr>
@@ -203,8 +205,27 @@ export function commercialInvoiceEmail(details: {
           </td>
         </tr>
       </table>
+      ${
+        details.payUrl
+          ? `<div style="margin-top: 20px; text-align: center;">
+              <a href="${details.payUrl}" style="display: inline-block; background: #e53935; color: #fff; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 8px; text-decoration: none;">Pay ${"$" + details.total.toFixed(2)} by Card</a>
+            </div>`
+          : ""
+      }
       <p style="margin-top: 20px;">Payment terms: Net 30 — due within 30 days of this invoice date.
-      Reply to this email or call us with any questions.</p>
+      ${details.payUrl ? "You can pay by card above, or " : "Please "}reply to this email or call us with any questions.</p>
+    `),
+  };
+}
+
+export function invoicePaidOwnerEmail(details: {
+  businessName: string;
+  amount: number;
+}): { subject: string; html: string } {
+  return {
+    subject: `Invoice paid: ${details.businessName}`,
+    html: wrapper(`
+      <p><strong>${details.businessName}</strong> just paid their invoice — ${"$" + details.amount.toFixed(2)} by card via Stripe.</p>
     `),
   };
 }
