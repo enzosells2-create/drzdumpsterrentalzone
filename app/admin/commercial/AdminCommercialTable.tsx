@@ -12,6 +12,7 @@ import {
   Phone,
   PlusCircle,
   Send,
+  Trash2,
   Truck,
 } from "lucide-react";
 import AdminHeader from "@/components/AdminHeader";
@@ -118,6 +119,7 @@ export default function AdminCommercialTable({
   const [updatingAccountId, setUpdatingAccountId] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [updatingUnitId, setUpdatingUnitId] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(
     initialAccounts[0]?.id ?? null
   );
@@ -200,6 +202,28 @@ export default function AdminCommercialTable({
       alert("Couldn't update that order. Please try again.");
     } finally {
       setUpdatingOrderId(null);
+    }
+  }
+
+  async function handleDeleteOrder(accountId: string, orderId: string, confirmationNumber: string) {
+    if (!window.confirm(`Delete order ${confirmationNumber}? This can't be undone.`)) return;
+    setDeletingOrderId(orderId);
+    try {
+      const res = await fetch(`/api/admin/commercial-orders/${orderId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      setAccounts((prev) =>
+        prev.map((a) => (a.id !== accountId ? a : { ...a, orders: a.orders.filter((o) => o.id !== orderId) }))
+      );
+      setSelectedOrderIds((prev) => {
+        if (!prev.has(orderId)) return prev;
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
+    } catch {
+      alert("Couldn't delete that order. Please try again.");
+    } finally {
+      setDeletingOrderId(null);
     }
   }
 
@@ -817,6 +841,7 @@ export default function AdminCommercialTable({
                                 <th className="py-2 pr-3 font-semibold">Status</th>
                                 <th className="py-2 pr-3 font-semibold">Pickup</th>
                                 <th className="py-2 pr-3 font-semibold">Balance</th>
+                                <th className="py-2 pr-3 font-semibold"></th>
                               </tr>
                             </thead>
                             <tbody>
@@ -938,6 +963,16 @@ export default function AdminCommercialTable({
                                         )}
                                       </button>
                                     )}
+                                  </td>
+                                  <td className="py-2.5 pr-3">
+                                    <button
+                                      onClick={() => handleDeleteOrder(a.id, o.id, o.confirmationNumber)}
+                                      disabled={deletingOrderId === o.id}
+                                      title="Delete this order"
+                                      className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red/10 hover:text-red disabled:opacity-50"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
                                   </td>
                                 </tr>
                               ))}
