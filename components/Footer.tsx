@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { COMPANY, SERVICE_CITIES } from "@/lib/pricing";
+import { COMPANY, SERVICE_CITIES, SOCIAL_LINKS } from "@/lib/pricing";
+
+const SOCIAL_LABELS: Record<keyof typeof SOCIAL_LINKS, string> = {
+  facebook: "Facebook",
+};
 
 export default function Footer() {
   return (
@@ -27,6 +31,11 @@ export default function Footer() {
             <Link href="/commercial/login" className="hover:text-navy">
               Commercial Login
             </Link>
+            {Object.entries(SOCIAL_LINKS).map(([key, href]) => (
+              <a key={key} href={href} target="_blank" rel="noopener noreferrer" className="hover:text-navy">
+                {SOCIAL_LABELS[key as keyof typeof SOCIAL_LINKS]}
+              </a>
+            ))}
           </nav>
         </div>
 

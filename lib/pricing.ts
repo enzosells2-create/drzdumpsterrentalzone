@@ -174,3 +174,9 @@ export const SERVICE_CITIES = [
   "Plymouth",
   "Howell",
 ];
+
+// External profiles — linked from the footer and listed in the LocalBusiness
+// structured data's `sameAs` so Google connects them to this business.
+export const SOCIAL_LINKS = {
+  facebook: "https://www.facebook.com/profile.php?id=61573628878251",
+};

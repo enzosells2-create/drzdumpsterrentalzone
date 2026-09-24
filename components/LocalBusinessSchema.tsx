@@ -1,4 +1,4 @@
-import { COMPANY, SERVICE_CITIES } from "@/lib/pricing";
+import { COMPANY, SERVICE_CITIES, SOCIAL_LINKS } from "@/lib/pricing";
 
 // Server-rendered JSON-LD so Google can attach our phone number, service
 // area, and price range directly to search results (and the Maps 3-pack)
@@ -17,6 +17,7 @@ export default function LocalBusinessSchema() {
       "@type": "City",
       name: `${city}, MI`,
     })),
+    sameAs: Object.values(SOCIAL_LINKS),
   };
 
   return (
