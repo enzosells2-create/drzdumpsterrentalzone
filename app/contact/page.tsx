@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import ContactForm from "./ContactForm";
 
 export const metadata = {
@@ -23,6 +24,7 @@ export default function ContactPage() {
           </Suspense>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

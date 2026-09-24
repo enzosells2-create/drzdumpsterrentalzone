@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import CommercialLoginForm from "./CommercialLoginForm";
 
 export const metadata = {
@@ -19,6 +20,7 @@ export default function CommercialLoginPage() {
           <CommercialLoginForm />
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

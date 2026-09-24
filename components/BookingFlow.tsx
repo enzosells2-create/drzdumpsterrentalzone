@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Header from "./Header";
+import Footer from "./Footer";
 import StepIndicator from "./StepIndicator";
 import StepPricing from "./steps/StepPricing";
 import StepCustomerInfo from "./steps/StepCustomerInfo";
@@ -189,6 +190,7 @@ export default function BookingFlow() {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

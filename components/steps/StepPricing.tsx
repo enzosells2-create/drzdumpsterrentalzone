@@ -1,5 +1,5 @@
 import { Check, Trash2 } from "lucide-react";
-import { DUMPSTER_SIZES } from "@/lib/pricing";
+import { DUMPSTER_SIZES, SERVICE_CITIES } from "@/lib/pricing";
 import { DumpsterSizeOption } from "@/lib/types";
 
 export default function StepPricing({
@@ -20,12 +20,18 @@ export default function StepPricing({
           Choose Your Perfect Dumpster Size
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-base text-white/90 sm:text-lg">
-          Professional waste management solutions for Michigan
+          Serving {SERVICE_CITIES.slice(0, 4).join(", ")}, and all of Southeast Michigan
         </p>
         <p className="mt-2 text-sm text-white/70">
           Select a dumpster size and let&apos;s get started with your rental
         </p>
       </div>
+
+      <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-gray-500">
+        DRZ Dumpster Rental delivers 5 to 30 yard dumpsters and roll-off trailers to{" "}
+        {SERVICE_CITIES.join(", ")}, and every town within 75 miles of South Lyon, Michigan.
+        Same-week delivery, 2 tons included on every size, and no hidden fees.
+      </p>
 
       <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(250px,1fr))]">
         {DUMPSTER_SIZES.map((size) => (

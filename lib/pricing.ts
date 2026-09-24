@@ -154,4 +154,23 @@ export const COMPANY = {
   phone: "(734) 366-4865",
   phoneHref: "tel:+17343664865",
   serviceArea: "Within 75 miles of South Lyon, Michigan",
+  url: "https://drzdumpsterentalzone.com",
 };
+
+// Cities within easy reach of South Lyon, MI — used in on-page copy and
+// structured data so search engines can match local "[city] dumpster
+// rental" queries instead of just generic "Michigan" ones.
+export const SERVICE_CITIES = [
+  "South Lyon",
+  "Northville",
+  "Novi",
+  "Brighton",
+  "Milford",
+  "Wixom",
+  "New Hudson",
+  "Walled Lake",
+  "Commerce Township",
+  "Farmington Hills",
+  "Plymouth",
+  "Howell",
+];
